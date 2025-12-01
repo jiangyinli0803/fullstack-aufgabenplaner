@@ -1,0 +1,31 @@
+
+<div class="header">
+
+  <div class="menu-left">
+  <app-hamburgmenu></app-hamburgmenu>
+ </div>
+
+ <div *ngFor="let item of menuItems" class="menu-link">    
+    <a
+     [routerLink]="item.routerLink"
+    routerLinkActive="active-link"
+    [routerLinkActiveOptions]="{ exact: true }">      
+      <span>{{ item.label}}</span>
+    </a>  
+  </div>
+
+    <div class="menu-right">
+     @if (authenticated()) {
+    <div>
+      <span class="mr-8 text-red-600 text-2xl">Welcome {{username()}} !</span>
+      <p-button class="text-2xl font-bold"  (onClick)="logout()">Logout</p-button>
+    </div>
+  } @else {
+    <div>
+      <p-button class="text-2xl font-bold" (onClick)="login()">Login</p-button>
+    </div>
+  }    
+  </div>
+
+  <img class="menu-end" src="/img/logo.png" alt="Aufgabenplaner" width="200" height="150">
+</div>

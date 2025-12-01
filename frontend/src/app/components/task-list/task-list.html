@@ -1,0 +1,49 @@
+
+<div class="p-6">
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+    Aufgaben – Status: <span class="text-blue-600 capitalize">{{ status }}</span>
+  </h2>
+
+  <div class="overflow-x-auto bg-white rounded-2xl shadow-md">
+    <table class="min-w-full border-collapse">
+      <thead class="bg-gray-100 text-gray-700 uppercase text-sm">
+        <tr>
+          <th class="px-6 py-3 text-left font-semibold">Aufgabe</th>
+           <th class="px-6 py-3 text-left font-semibold">Bearbeiter</th>
+          <th class="px-6 py-3 text-left font-semibold">Abteilung</th>
+          <th class="px-6 py-3 text-left font-semibold">Startdatum</th>
+          <th class="px-6 py-3 text-left font-semibold">Enddatum</th>
+          <th class="px-6 py-3 text-left font-semibold">Dauer(Tage)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let task of tasksWithEmployeesAndDuration"
+          (click)="viewTaskDetail(task.id)"
+          class="border-b hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
+        >
+          <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employeeName }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employeeDepartment }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.startDate }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.endDate }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.duration }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 如果没有任务时 -->
+  <div *ngIf="tasks.length === 0" class="text-center text-gray-500 mt-6">
+    Keine Aufgaben mit dem Status
+    <span class="text-blue-600 font-semibold">{{ status }}</span> gefunden.
+  </div>
+
+   <button 
+      routerLink="/"
+      class="mt-8 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition cursor-pointer">
+      Zurück
+    </button>
+</div>
+
+

@@ -1,0 +1,52 @@
+<div class="py-6">
+  <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+   Übersicht Aller Aufgaben
+  </h2>
+
+  <div class="overflow-x-auto bg-white rounded-2xl shadow-md relative">
+    <a routerLink="/new-task" class="bg-white border-4 border-green-600 rounded-xl inline-block object-center p-3 absolute right-1" >    
+    <span class="text-2xl text-green-600">+</span>
+    <span class="text-2xl font-bold">NEU</span>
+    </a>
+
+    <div class="m-4">
+    <label class="mr-2 font-semibold">Nach Abteilung filtern:</label>
+    <select
+        [(ngModel)]="selectedDepartment"
+        class="border rounded-lg px-3 py-2"
+    >
+        <option *ngFor="let d of departments" [value]="d">
+        {{ d }}
+        </option>
+    </select>
+    </div>
+
+    <table class="min-w-full border-collapse">
+      <thead class="bg-gray-100 text-gray-700 uppercase text-sm">
+        <tr>
+           <th class="px-6 py-3 text-left font-semibold">Aufgabe-ID</th>
+          <th class="px-6 py-3 text-left font-semibold">Aufgabe</th>
+           <th class="px-6 py-3 text-left font-semibold">Bearbeiter</th>
+          <th class="px-6 py-3 text-left font-semibold">Abteilung</th>
+          <th class="px-6 py-3 text-left font-semibold">Startdatum</th>
+          <th class="px-6 py-3 text-left font-semibold">Enddatum</th>
+          <th class="px-6 py-3 text-left font-semibold">Dauer(Tage)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let task of filteredTasksbyDepartment"
+          (click)="viewTaskDetail(task.id)"
+          class="border-b hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
+        >
+         <td class="px-6 py-3 text-gray-700">{{ task.id }}</td>
+          <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employeeName }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employeeDepartment }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.startDate }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.endDate }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.duration }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
