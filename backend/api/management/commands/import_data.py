@@ -46,9 +46,12 @@ class Command(BaseCommand): #创建一个命令类，必须叫 Command，继承 
         count = 0
         for item in data:
            employee, created = Employee.objects.get_or_create( #先查找是否已存在, 如果存在：返回这个员工, 如果不存在：创建新员工
-                name=item['name'], #name 字段（必须存在，否则报错）
-                defaults={
-                    'department': item.get('department', ''), #defaults={} - 只在创建新记录时使用的字段,如果不存在则用空字符串
+                firstname=item['firstname'], #name 字段（必须存在，否则报错）
+                lastname=item['lastname'],
+                department = item.get('department', ''),
+                defaults={ #defaults={} - 只在创建新记录时使用的字段,如果不存在则用空字符串
+                    'role': item.get('role', 'staff'),
+                    'is_active': item.get('is_active', True),  # 可用来禁用员工账户                                               
                 }
             )
            if created:
@@ -59,17 +62,31 @@ class Command(BaseCommand): #创建一个命令类，必须叫 Command，继承 
     def import_tasks(self, data):
         count = 0
         for item in data:
+             # 处理外键字段（employee、tester、created_by）
+            employee = None
+            if item.get('employee'):
+                employee = Employee.objects.filter(id=item['employee']).first() # 返回对象，
+
+            tester = None
+            if item.get('tester'):
+                tester = Employee.objects.filter(id=item['tester']).first()
+
+            created_by = None
+            if item.get('created_by'):
+                created_by = Employee.objects.filter(id=item['created_by']).first()
+
             task, created = Task.objects.get_or_create(
                 title=item['title'],
                 start_date=item['start_date'], #如果已存在同名且同开始日期的任务，就不重复创建
                 defaults={
                     'description': item.get('description', ''),
                     'status': item.get('status', 'nicht_zugewiesen'),
-                    'end_date': item.get('end_date', ''),
-                    'color': item.get('color', '#edeff3'),
-                    'employee_id': item.get('employee_id'),
-                    'tester_id': item.get('tester_id'), #如果 JSON 中没有 tester_id 字段，返回 None
-                    'version': item.get('version', 'v1.0'),
+                    'priority': item.get('priority', 'medium'),                    
+                    'end_date': item.get('end_date'),                   
+                    'employee': employee,  # 这里传对象
+                    'tester': tester, #Django 外键必须传 model 实例，而不是 ID 数字
+                    'created_by': created_by,
+                    'version': item.get('version', 'v1.0'),                   
                 }
             )
             if created:
@@ -81,14 +98,17 @@ class Command(BaseCommand): #创建一个命令类，必须叫 Command，继承 
         count = 0
         for item in data:
             try:
-                task = Task.objects.get(id=item['task_id']) #评论需要关联到任务，所以先查找任务
+                task = Task.objects.get(id=item['task']) #评论需要关联到任务，所以先查找任务
+
+                # 查找作者，如果不存在则跳过该评论
+                author = Employee.objects.filter(id=item.get('author')).first()
+          
                 comment = Comment.objects.create(
                     task=task,
                     text=item['text'],
-                    author=item['author'],
-                    author_id=item.get('author_id'),
+                    author=author,                    
                 )
                 count += 1
             except Task.DoesNotExist:
-                self.stdout.write(self.style.WARNING(f'Task ID {item["task_id"]} not exists'))
+                self.stdout.write(self.style.WARNING(f'Task ID {item["task"]} not exists'))
         self.stdout.write(self.style.SUCCESS(f'successfully imported {count} comments'))

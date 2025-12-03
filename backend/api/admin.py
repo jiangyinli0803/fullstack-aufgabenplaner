@@ -4,28 +4,26 @@ from .models import Task, Employee, Comment
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'department', 'created_at']
-    search_fields = ['name', 'department']
-    list_filter = ['department', 'created_at']
-    ordering = ['name']
+    list_display = ['firstname', 'lastname','department', 'role','created_at']
+    search_fields = ['firstname', 'lastname', 'department']
+    list_filter = ['department', 'created_at', 'role']
+    ordering = ['lastname']
 
 @admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
-    list_display = ['title', 'status', 'description','start_date', 'end_date', 'employee_id', 'version', 'created_at']
-    search_fields = ['title']
-    list_filter = ['status', 'start_date', 'end_date', 'created_at']
-    list_editable = ['status']  # 可以在列表页直接修改状态
+class TaskAdmin(admin.ModelAdmin):  # 列表显示的字段
+    list_display = ['title', 'status','priority', 'description','start_date', 'end_date', 'employee', 'version','created_by', 'created_at']
+    search_fields = ['title', 'employee__firstname', 'employee__lastname']
+    list_filter = ['status', 'priority', 'start_date', 'end_date', 'created_at']
+    list_editable = ['status', 'priority']  # 可以在列表页直接修改状态
     date_hierarchy = 'start_date'  # 按日期分层浏览
-  
-
-
+   
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ['get_short_text', 'author', 'task', 'timestamp']
-    search_fields = ['text', 'author', 'task__title']
-    list_filter = ['timestamp', 'author']
-    readonly_fields = ['timestamp']
+    list_display = ['get_short_text', 'author', 'task', 'created_at']
+    search_fields = ['text', 'author__firstname', 'task__title']
+    list_filter = ['created_at', 'author']
+    readonly_fields = ['created_at', 'updated_at']
     
     # 显示评论的前50个字符
     def get_short_text(self, obj):
