@@ -1,12 +1,12 @@
 [
-  { "firstname": "Anna", "lastname": "Schmidt", "department": "Marketing", "role": "staff" },
-  { "firstname": "Max", "lastname": "Müller", "department": "HR", "role": "admin" },
-  { "firstname": "Lisa", "lastname": "Weber", "department": "Marketing", "role": "staff" },
-  { "firstname": "Tom", "lastname": "White", "department": "IT", "role": "staff" },
-  { "firstname": "Sara", "lastname": "Fissler", "department": "Sales", "role": "staff" },
-  { "firstname": "Elena", "lastname": "Richter", "department": "Project Management", "role": "manager" },
-  { "firstname": "Miriam", "lastname": "Bauer", "department": "Sales", "role": "staff" },
-  { "firstname": "David", "lastname": "Weber", "department": "HR", "role": "manager" },
-  { "firstname": "Jonas", "lastname": "Keller", "department": "Marketing", "role": "staff" },
-  { "firstname": "Maximilian", "lastname": "Vogt", "department": "IT", "role": "staff" }
+  { "id": 1, "firstname": "Anna", "lastname": "Schmidt", "department": "Marketing", "role": "staff" },
+  { "id": 2, "firstname": "Max", "lastname": "Müller", "department": "HR", "role": "admin" },
+  { "id": 3, "firstname": "Lisa", "lastname": "Weber", "department": "Marketing", "role": "staff" },
+  { "id": 4, "firstname": "Tom", "lastname": "White", "department": "IT", "role": "staff" },
+  { "id": 5, "firstname": "Sara", "lastname": "Fissler", "department": "Sales", "role": "staff" },
+  { "id": 6, "firstname": "Elena", "lastname": "Richter", "department": "Project Management", "role": "manager" },
+  { "id": 7, "firstname": "Miriam", "lastname": "Bauer", "department": "Sales", "role": "staff" },
+  { "id": 8, "firstname": "David", "lastname": "Weber", "department": "HR", "role": "manager" },
+  { "id": 9, "firstname": "Jonas", "lastname": "Keller", "department": "Marketing", "role": "staff" },
+  { "id": 10, "firstname": "Maximilian", "lastname": "Vogt", "department": "IT", "role": "staff" }
 ]

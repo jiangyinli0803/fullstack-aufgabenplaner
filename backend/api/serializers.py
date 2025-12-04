@@ -2,9 +2,10 @@ from rest_framework import serializers
 from .models import Task, Employee, Comment
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    full_name = serializers.ReadOnlyField()  # 使用定义的 property
     class Meta:
         model = Employee
-        fields = ['id', 'firstname', 'lastname', 'role', 'department']
+        fields = ['id', 'firstname', 'lastname', 'full_name', 'role', 'department', 'is_active']
 
 class CommentSerializer(serializers.ModelSerializer):
 # 方法：使用库自动转换 - 全部用 snake_case
@@ -13,8 +14,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'task_title', 'text', 'author_name', 'is_edited', 'createdAt', 'updatedAt']
-        read_only_fields = ['createdAt', 'updatedAt']
+        fields = ['id', 'task_title', 'text', 'author_name', 'is_edited', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
     def get_task_title(self, obj):     # 方法名：snake_case
         return obj.task.title
@@ -52,7 +53,8 @@ class TaskSerializer(serializers.ModelSerializer):
             'start_date', 
             'end_date',             
             'employee',
-            'employee_id', 
+            'employee_id',
+            'tester', 
             'tester_id',
             'created_by',
             'created_by_id',

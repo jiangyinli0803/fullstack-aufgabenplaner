@@ -45,12 +45,13 @@ class Command(BaseCommand): #创建一个命令类，必须叫 Command，继承 
     def import_employees(self, data):
         count = 0
         for item in data:
-           employee, created = Employee.objects.get_or_create( #先查找是否已存在, 如果存在：返回这个员工, 如果不存在：创建新员工
-                firstname=item['firstname'], #name 字段（必须存在，否则报错）
-                lastname=item['lastname'],
-                department = item.get('department', ''),
+           employee, created = Employee.objects.update_or_create( #先查找是否已存在, 如果存在：返回这个员工, 如果不存在：创建新员工
+                id=item['id'],  # 明确指定 ID, ansonsten Django 会自动生成新的 ID
                 defaults={ #defaults={} - 只在创建新记录时使用的字段,如果不存在则用空字符串
                     'role': item.get('role', 'staff'),
+                    'firstname': item['firstname'], #name 字段（必须存在，否则报错）
+                    'lastname': item['lastname'],
+                    'department' : item.get('department', ''),
                     'is_active': item.get('is_active', True),  # 可用来禁用员工账户                                               
                 }
             )
@@ -64,16 +65,16 @@ class Command(BaseCommand): #创建一个命令类，必须叫 Command，继承 
         for item in data:
              # 处理外键字段（employee、tester、created_by）
             employee = None
-            if item.get('employee'):
-                employee = Employee.objects.filter(id=item['employee']).first() # 返回对象，
+            if item.get('employee_id'):
+                employee = Employee.objects.filter(id=item['employee_id']).first() # 返回对象，
 
             tester = None
-            if item.get('tester'):
-                tester = Employee.objects.filter(id=item['tester']).first()
+            if item.get('tester_id'):
+                tester = Employee.objects.filter(id=item['tester_id']).first()
 
             created_by = None
-            if item.get('created_by'):
-                created_by = Employee.objects.filter(id=item['created_by']).first()
+            if item.get('created_by_id'):
+                created_by = Employee.objects.filter(id=item['created_by_id']).first()
 
             task, created = Task.objects.get_or_create(
                 title=item['title'],
