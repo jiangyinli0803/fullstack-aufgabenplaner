@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TaskService } from '../../services/task.service';
+import { TaskService } from '../../services000/task.service';
 import { Task } from '../../models/task.model';
 import { Employee } from '../../models/employee.model';
-import { EmployeeService } from '../../services/employee.service';
+import { EmployeeService } from '../../services000/employee.service';
 
 interface Day{
   date: string;

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { TaskService } from '../../services/task.service';
-import { EmployeeService } from '../../services/employee.service';
+import { TaskService } from '../../services000/task.service';
+import { EmployeeService } from '../../services000/employee.service';
 import { CommonModule } from '@angular/common';
 import { Employee } from '../../models/employee.model';
 import { Task } from '../../models/task.model';
