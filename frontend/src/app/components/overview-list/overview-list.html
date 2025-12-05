@@ -28,6 +28,8 @@
           <th class="px-6 py-3 text-left font-semibold">Aufgabe</th>
            <th class="px-6 py-3 text-left font-semibold">Bearbeiter</th>
           <th class="px-6 py-3 text-left font-semibold">Abteilung</th>
+          <th class="px-6 py-3 text-left font-semibold">Status</th>
+          <th class="px-6 py-3 text-left font-semibold">Priorität</th>
           <th class="px-6 py-3 text-left font-semibold">Startdatum</th>
           <th class="px-6 py-3 text-left font-semibold">Enddatum</th>
           <th class="px-6 py-3 text-left font-semibold">Dauer(Tage)</th>
@@ -35,16 +37,24 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let task of filteredTasksbyDepartment"
+          *ngFor="let task of tasksWithDuration"
           (click)="viewTaskDetail(task.id)"
           class="border-b hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
         >
          <td class="px-6 py-3 text-gray-700">{{ task.id }}</td>
           <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.employeeName }}</td>
-          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employeeDepartment }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.startDate }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.endDate }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employee.name }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employee.department }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm" [style.background-color]="task.status_color">{{ task.status }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.priority }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.start_date }}</td>
+          <td class="px-6 py-3 text-gray-700" [class.text-red-600]="task.is_overdue">
+             {{ task.end_date }}
+              @if (task.is_overdue) {
+          <span class="ml-1">⚠️</span>
+          }
+          </td>         
+         
           <td class="px-6 py-3 text-gray-700">{{ task.duration }}</td>
         </tr>
       </tbody>

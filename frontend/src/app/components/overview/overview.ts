@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TaskService } from '../../services000/task.service';
+
 import { Task } from '../../models/task.model';
 import { Employee } from '../../models/employee.model';
-import { EmployeeService } from '../../services000/employee.service';
+import { TaskService } from '../../services/task.service';
+import { EmployeeService } from '../../services/employee.service';
+import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 
 interface Day{
   date: string;
@@ -21,21 +23,32 @@ interface Day{
 })
 
 export class Overview implements OnInit {
-   tasks: Task[] = []; // 建议给默认值
-   employees: Employee[] = [];
+  tasks$!: Observable<Task[]>;
+  employees$!: Observable<Employee[]>;
+  loading$! : Observable<boolean>;
+  error$! : Observable<string|null>;
+  currentTasks!: Task[];
 
-  timelineDays: Day[] = [];  
-  selectedDay: Date = new Date(); // 当前选中的日期
-  weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']; 
-
+ 
   constructor(
     private taskService: TaskService,
     private employeeService : EmployeeService
-  ){};
+  ){
+   
+  }; 
+  timelineDays: Day[] = [];  
+  selectedDay: Date = new Date(); // 当前选中的日期
+  weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];   
 
   ngOnInit() {
-    this.tasks = this.taskService.getCurrentTasks(); 
-    this.employees = this.employeeService.getCurrentEmployees();
+
+    this.tasks$ = this.taskService.tasks$;//xxx$表示可观察对象（Observable）,可观察数据流
+    this.employees$ = this.employeeService.employees$;
+    this.loading$ = this.taskService.loading$;
+    this.error$ = this.taskService.error$;  
+    this.currentTasks = this.taskService.getTasksValue(); 
+
+    this.taskService.loadTasks(); // 触发加载
     
     this.generateCalendar();
     // 初始化时默认显示今天为中心
@@ -43,6 +56,21 @@ export class Overview implements OnInit {
     this.generateTimeline(today);
   }
 
+  refreshData(): void {
+    // 刷新数据
+    this.taskService.refreshTasks();
+  }
+  createNewTask(): void {
+    const newTaskData: Partial<Task> = { /* ... 任务数据 ... */ };
+    this.taskService.createTask(newTaskData as Task).subscribe({
+      next: (task) => {
+        console.log('Task created successfully:', task);
+        // 因为 Service 内部已经更新了 tasksSubject$ 缓存，所以 tasks$ 会自动更新
+      },
+      error: (err) => console.error('Failed to create task:', err)
+    });
+  }
+  
   // 点击日历格子时调用
  onSelectDay(day: Date) {
   this.selectedDay = day;
@@ -189,11 +217,11 @@ export class Overview implements OnInit {
   }
 
   getEmployeeTasksForGrid(employeeId: number){
-    return this.tasks
-    .filter(task => task.employeeId === employeeId)
-    .map((task) => {
-      const startCol = this.getTaskStartColumn(task.startDate);
-      const endCol = this.getTaskEndColumn(task.endDate);
+    return this.currentTasks    
+      .filter(task => task.employee?.id === employeeId)
+      .map((task) => {
+      const startCol = this.getTaskStartColumn(task.start_date);
+      const endCol = this.getTaskEndColumn(task.end_date);
      
       // ✅ 完全不可见的任务：开始和结束都不在范围内
       if (startCol === -1 || endCol === -1) return null;      
@@ -203,8 +231,8 @@ export class Overview implements OnInit {
       if (span <= 0) return null; // 过滤无效任务
 
       // 检查任务是否被截断
-      const taskStartDate = this.parseDate(task.startDate);
-      const taskEndDate = this.parseDate(task.endDate);
+      const taskStartDate = this.parseDate(task.start_date);
+      const taskEndDate = this.parseDate(task.end_date);
       const firstDate = this.timelineDays[0].fullDate;
       const lastDate = this.timelineDays[this.timelineDays.length - 1].fullDate;
       
@@ -219,7 +247,7 @@ export class Overview implements OnInit {
         isTruncatedRight,  // 添加右侧截断标记      
       }      
     })
-    .filter(task=> task !== null);  
+    .filter(task=> task !== null); 
   }
 
 }

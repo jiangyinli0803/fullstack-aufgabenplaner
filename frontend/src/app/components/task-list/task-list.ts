@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { TaskService } from '../../services000/task.service';
+
 import { CommonModule } from '@angular/common';
 import { Task } from '../../models/task.model';
-import { EmployeeService } from '../../services000/employee.service';
+
 import { Employee } from '../../models/employee.model';
+import { TaskService } from '../../services/task.service';
+import { EmployeeService } from '../../services/employee.service';
 
 
 @Component({

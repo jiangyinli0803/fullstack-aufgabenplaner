@@ -81,7 +81,7 @@
 
        <!-- Employee + task Rows -->
   <div class="space-y-2">
-    <div *ngFor="let employee of employees" 
+    <div *ngFor="let employee of Employees$ | async" 
          class="border-b last:border-b-0 pb-3"> <!-- Employee 分隔线 -->
       
       <div class="grid gap-2 items-center" 
@@ -91,10 +91,10 @@
         <!-- 员工信息列 (固定 220px) -->
         <div class="flex items-center gap-3 px-2">
           <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span class="text-indigo-600 font-bold text-sm">{{ getInitials(employee.name) }}</span>
+            <span class="text-indigo-600 font-bold text-sm">{{ getInitials(employee.firstname) }}</span>
           </div>
           <div class="font-medium text-gray-800 text-sm truncate">
-            {{ employee.name }}
+            {{ employee.lastname }}
           </div>
         </div>
 

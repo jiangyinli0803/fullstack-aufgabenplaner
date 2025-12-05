@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { TaskService } from '../../services000/task.service';
-import { EmployeeService } from '../../services000/employee.service';
+
 import { CommonModule } from '@angular/common';
-import { Employee } from '../../models/employee.model';
-import { Task } from '../../models/task.model';
+
 import { FormsModule } from '@angular/forms';
-import { UserComment } from '../../models/userComment.model';
+
 import { Location } from '@angular/common';
+import { Task } from '../../models/task.model';
+import { Employee } from '../../models/employee.model';
+import { TaskService } from '../../services/task.service';
+import { EmployeeService } from '../../services/employee.service';
 
 export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 'v3.0','v3.1','v3.2'];
 
@@ -92,7 +94,7 @@ export class TaskDetail implements OnInit{
         return;
       }
 
-      const comment: UserComment = {
+      const comment: Comment = {
         id: Date.now(),
         text: this.newCommentText,
         author: this.currentUser,

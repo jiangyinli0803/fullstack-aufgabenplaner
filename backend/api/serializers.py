@@ -9,12 +9,23 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
 # 方法：使用库自动转换 - 全部用 snake_case
+
     task_title = serializers.SerializerMethodField()
     author_name = serializers.SerializerMethodField()
-
+    task_id = serializers.PrimaryKeyRelatedField(
+        source='task',           # 指向 Model 中的 task 字段
+        queryset=Task.objects.all(),
+        write_only=False         # 读写都可见
+    )
+    author_id = serializers.PrimaryKeyRelatedField(
+        source='author',           # 指向 Model 中的 author 字段
+        queryset=Task.objects.all(),
+        write_only=False         # 读写都可见
+    )
+    
     class Meta:
         model = Comment
-        fields = ['id', 'task_title', 'text', 'author_name', 'is_edited', 'created_at', 'updated_at']
+        fields = ['id', 'task_id','task_title', 'text', 'author_id','author_name', 'is_edited', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
     def get_task_title(self, obj):     # 方法名：snake_case
