@@ -13,28 +13,28 @@
           <th class="px-6 py-3 text-left font-semibold">Abteilung</th>
           <th class="px-6 py-3 text-left font-semibold">Startdatum</th>
           <th class="px-6 py-3 text-left font-semibold">Enddatum</th>
-          <th class="px-6 py-3 text-left font-semibold">Dauer(Tage)</th>
+         
         </tr>
       </thead>
       <tbody>
         <tr
-          *ngFor="let task of tasksWithEmployeesAndDuration"
+          *ngFor="let task of tasks$ | async"
           (click)="viewTaskDetail(task.id)"
           class="border-b hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
         >
           <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.employeeName }}</td>
-          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employeeDepartment }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.startDate }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.endDate }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.duration }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employee?.full_name }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employee?.department }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.start_date }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.end_date }}</td>
+        
         </tr>
       </tbody>
     </table>
   </div>
 
   <!-- 如果没有任务时 -->
-  <div *ngIf="tasks.length === 0" class="text-center text-gray-500 mt-6">
+  <div *ngIf="tasks$.length === 0" class="text-center text-gray-500 mt-6">
     Keine Aufgaben mit dem Status
     <span class="text-blue-600 font-semibold">{{ status }}</span> gefunden.
   </div>

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
 
@@ -8,8 +8,11 @@ import { FormsModule } from '@angular/forms';
 import { Location } from '@angular/common';
 import { Task } from '../../models/task.model';
 import { Employee } from '../../models/employee.model';
+import { Comment } from '../../models/comment.model';
 import { TaskService } from '../../services/task.service';
 import { EmployeeService } from '../../services/employee.service';
+import { Observable, switchMap } from 'rxjs';
+import { CommentService } from '../../services/comment.service';
 
 export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 'v3.0','v3.1','v3.2'];
 
@@ -21,96 +24,279 @@ export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 
   styleUrl: './task-detail.css',
 })
 export class TaskDetail implements OnInit{
-  task : Task | undefined;
-  employee: Employee | undefined ;
-  employees : Employee[] = [];
+  // 响应式数据流
+  task$!: Observable<Task | undefined>;
+  employees$!: Observable<Employee[]>;
+  loading$!: Observable<boolean>;
+  error$!: Observable<string | null>;
+
+  // 本地状态
+  task?: Task;
+  employee?: Employee;
+  selectedTester?: Employee;
+  duration?: number;
+  
+  // 编辑模式
   isEditMode = false;
-  editedTask: Task | undefined;
-  duration: number|undefined;
-  dateError: string|undefined;
+  editedTask?: Task;
+  dateError?: string;
 
-  //new parameters
-  selectedTester: Employee|undefined = undefined;
-  newCommentText: string = '';
-  currentUser: string = 'Current User';
-  currentUserId?: number = 1;
-  availableVersions = AVAILABLE_VERSIONS;
+  // 评论相关
+  comments: Comment[] = [];  // 评论单独管理
+  newCommentText = '';
+  editingCommentId?: number;
+  editingCommentText = '';
 
-    // 编辑评论相关 
-  editingCommentText: string = '';
+  // 当前用户信息（从认证服务获取）
+  currentUser = 'Current User'; // TODO: 从 AuthService 获取
+  currentUserId = 123; // TODO: 从 AuthService 获取
+  destroy$: any;
 
   constructor(
-    private route: ActivatedRoute,
+   private route: ActivatedRoute,
+    private router: Router,
+    private location: Location,
     private taskService: TaskService,
-    private employeeService: EmployeeService,
-
-    private location: Location
+     private commentService: CommentService,
+    private employeeService: EmployeeService
   ){}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      const taskId = Number(params.get('id'));
-      const allTasks = this.taskService.getCurrentTasks();     
+     // 1️⃣ 确保数据已加载
+    this.taskService.loadTasks();
+    this.employeeService.loadEmployees();
 
-      this.task = allTasks.find(t => t.id === taskId);
+    // 2️⃣ 获取响应式数据流
+    this.loading$ = this.taskService.loading$;
+    this.error$ = this.taskService.error$;
+    this.employees$ = this.employeeService.employees$;
+
+    // 3️⃣ 监听路由参数变化，获取任务详情
+    this.route.paramMap.pipe(
+      switchMap(params => {
+        const taskId = Number(params.get('id'));
+        return this.taskService.getTaskById(taskId);
+      })
       
-      if (this.task && this.task.employeeId) {
-        this.employee = this.employeeService.getEmployeeById(this.task.employeeId);
+    ).subscribe({
+      next: (task) => {
+        if (task) {
+          this.task = task;
+          this.loadEmployeeInfo();
+          this.loadComments(); 
+          this.loadTester();
+          this.calculateDuration();
+        } else {
+          console.error('Task not found');
+          this.router.navigate(['/tasks']);
+        }
+      },
+      error: (err) => {
+        console.error('Error loading task:', err);
       }
     });
-
-    this.employees = this.employeeService.getCurrentEmployees();
+  }
   
-    this.duration=this.taskService.calculateDuration(this.task!.startDate!,this.task!.endDate!);    
-    this.loadTester();
-    
-    if (!this.task!.version){this.task!.version = 'v1.0';} 
+      ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+      }
+  // ========== 辅助方法 ==========
+  private loadComments(): void {
+    if (!this.task?.id) return;
+
+    this.commentService.getCommentsByTaskId(this.task.id)
+        .subscribe({
+        next: (comments) => {
+          this.comments = comments;
+        },
+        error: (err) => {
+          console.error('Error loading comments:', err);
+        }
+      });
   }
 
+  private loadEmployeeInfo(): void {
+    if (this.task?.employee?.id) {
+      this.employeeService.getEmployeeById(this.task.employee.id)
+          .subscribe(employee => {
+          this.employee = employee;
+        });
+    }
+  }
+
+  private loadTester(): void {
+    if (this.task?.tester?.id) {
+      this.employeeService.getEmployeeById(this.task.tester.id)       
+        .subscribe(tester => {
+          this.selectedTester = tester;
+        });
+    } else {
+      this.selectedTester = undefined;
+    }
+  }
+
+  private calculateDuration(): void {
+    if (this.task?.start_date && this.task?.end_date) {
+      this.duration =this.taskService.calculateDuration(
+        this.task.start_date,
+        this.task.end_date
+      );
+    }
+  }
     goBack(){
       this.location.back();
     }
 
-    onEmployeeChange(selectedEmployeeId: number | undefined) {
-      if (selectedEmployeeId) {
-        this.employee = this.employeeService.getEmployeeById(selectedEmployeeId);
-      } else {
-        this.employee = undefined;
-      }
-    }
+   // ========== 编辑模式 ==========
 
-    loadTester(){
-      if(this.task?.testerId){
-        this.selectedTester =  this.employeeService.getEmployeeById(this.task.testerId)  ;
-      }else{
-        this.selectedTester = undefined;
-      }
+  enterEditMode(): void {
+    if (!this.task) return;
+    
+    this.isEditMode = true;
+    // 深拷贝任务对象
+    this.editedTask = JSON.parse(JSON.stringify(this.task));
+    
+    // 转换日期格式为 input[type="date"] 需要的格式 (yyyy-MM-dd)
+    if (this.editedTask?.start_date) {
+      this.editedTask.start_date = this.toInputDateFormat(this.editedTask.start_date);
     }
-  
+    if (this.editedTask?.end_date) {
+      this.editedTask.end_date = this.toInputDateFormat(this.editedTask.end_date);
+    }
+  }
 
-    // 添加评论（查看模式下可用）
-    addComment() {
-      if (!this.newCommentText.trim()) {
+    cancelEdit(): void {
+    this.isEditMode = false;
+    this.editedTask = undefined;
+    this.dateError = undefined;
+  }
+
+   saveChanges(): void {
+    if (!this.editedTask || !this.task) return;
+
+    // 验证日期
+    if (this.editedTask.start_date && this.editedTask.end_date) {
+      const start = new Date(this.editedTask.start_date);
+      const end = new Date(this.editedTask.end_date);
+      
+      if (end < start) {
+        this.dateError = 'Enddatum darf nicht vor dem Startdatum liegen!';
         return;
       }
-
-      const comment: Comment = {
-        id: Date.now(),
-        text: this.newCommentText,
-        author: this.currentUser,
-        timestamp: new Date().toISOString(),
-        authorId: this.currentUserId
-      };
-
-      if (!this.task!.comments) {
-        this.task!.comments = [];
-      }
-
-      this.task!.comments.push(comment);
-      this.taskService.updateTask(this.task!);
-      
-      this.newCommentText = '';
     }
+
+     // ✅ 调用后端 API 更新任务
+    this.taskService.updateTask(this.task.id, this.editedTask)
+        .subscribe({
+        next: (updatedTask) => {
+          console.log('Task updated successfully:', updatedTask);
+          
+          // 更新本地状态
+          this.task = updatedTask;
+          this.loadEmployeeInfo();
+          this.loadTester();
+          this.calculateDuration();
+          
+          // 退出编辑模式
+          this.isEditMode = false;
+          this.editedTask = undefined;
+          this.dateError = undefined;
+        },
+        error: (err) => {
+          console.error('Error updating task:', err);
+          alert('保存失败，请重试');
+        }
+      });
+  }
+
+  onEmployeeChange(selectedEmployeeId: number | undefined): void {
+    if (selectedEmployeeId) {
+      this.employeeService.getEmployeeById(selectedEmployeeId)
+          .subscribe(employee => {
+          this.employee = employee;
+          
+          // 如果在编辑模式，更新 editedTask
+          if (this.isEditMode && this.editedTask) {
+            this.editedTask.employee = employee;
+          }
+        });
+    } else {
+      this.employee = undefined;
+      if (this.isEditMode && this.editedTask) {
+        this.editedTask.employee = undefined;
+      }
+    }
+  }
+
+   onTesterChange(selectedTesterId: number | undefined): void {
+    if (selectedTesterId) {
+      this.employeeService.getEmployeeById(selectedTesterId)       
+        .subscribe(tester => {
+          this.selectedTester = tester;          
+          if (this.isEditMode && this.editedTask) {
+            this.editedTask.tester = tester;
+          }
+        });
+    } else {
+      this.selectedTester = undefined;
+      if (this.isEditMode && this.editedTask) {
+        this.editedTask.tester = undefined;
+      }
+    }
+  }
+
+  updateDuration(): void {
+    if (!this.editedTask?.start_date || !this.editedTask?.end_date) {
+      this.duration = undefined;
+      return;
+    }
+
+    const start = new Date(this.editedTask.start_date);
+    const end = new Date(this.editedTask.end_date);
+
+    if (end < start) {
+      this.dateError = 'Enddatum darf nicht vor dem Startdatum liegen!';
+      this.duration = undefined;
+    } else {
+      this.dateError = undefined;
+      this.duration = this.taskService.calculateDuration(
+        this.editedTask.start_date,
+        this.editedTask.end_date
+      );
+    }
+  }
+    // ✅ 添加评论（正确版本）
+ addComment(): void {
+  if (!this.newCommentText.trim() || !this.task) {
+    return;
+  }
+
+  const newComment: Comment = {
+    id: -Date.now(),  // 临时负数 ID
+    task_id: this.task.id,
+    task_title: this.task.title,
+    text: this.newCommentText,
+    author_id: this.currentUserId,
+    author_name: this.currentUser,
+    is_edited: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  this.commentService.createComment(newComment)
+     .subscribe({
+      next: (comment) => {  // ✅ comment 是完整的 Comment 类型（后端返回）
+        console.log('Comment created:', comment);
+        this.comments.push(comment);  // ✅ 现在没有类型错误了
+        this.newCommentText = '';
+      },
+      error: (err) => {
+        console.error('Error creating comment:', err);
+        alert('添加评论失败，请重试');
+      }
+    });
+}
 
      // 保存编辑后的评论
    saveEditComment(commentId: number) {
@@ -127,29 +313,35 @@ export class TaskDetail implements OnInit{
         comment.timestamp = new Date().toISOString();  // 更新时间戳
         
         if (!this.isEditMode) {
-          this.taskService.updateTask(this.task!);
+          this.taskService.updateTask(this.task!.id, { comments: this.task?.comments });
         }
       }
     }
    }
 
   // 检查是否是评论作者
-  isCommentAuthor(comment: UserComment): boolean {
-    return comment.authorId === this.currentUserId;
+  isCommentAuthor(comment: Comment): boolean {
+    return comment?.author_id === this.currentUserId;
   }
 
   // 删除评论
-  deleteComment(commentId: number) {
-    if (this.task?.comments) {
-    this.task.comments = this.task.comments.filter(c => c.id !== commentId);
-    
-    // 如果在编辑模式，同步到 editedTask
-    if (this.isEditMode && this.editedTask) {
-      this.editedTask.comments = [...this.task.comments];
+  deleteComment(commentId: number): void {
+    if (!confirm('Möchten Sie diesen Kommentar wirklich löschen?')) {
+      return;
     }
-    
-    this.taskService.updateTask(this.task);
-  }
+
+    this.commentService.deleteCommentById(commentId)
+        .subscribe({
+        next: () => {
+          console.log('Comment deleted');
+          // 从本地列表移除
+          this.comments = this.comments.filter(c => c.id !== commentId);
+        },
+        error: (err) => {
+          console.error('Error deleting comment:', err);
+          alert('Kommentar konnte nicht gelöscht werden, bitte versuchen Sie es erneut.');
+        }
+      });
   }
 
   //
@@ -177,68 +369,8 @@ export class TaskDetail implements OnInit{
       return `${year}-${month}-${day}`;
     }
  
-  updateDuration() {
-       if (!this.editedTask?.startDate || !this.editedTask?.endDate) {
-        this.duration = undefined;
-        return;
-      }
-
-      const start = new Date(this.editedTask.startDate);
-      const end = new Date(this.editedTask.endDate);
-
-      if (end < start) {
-        // 显示提示, 从日历中选择的日期格式是yyyy-MM-dd
-        this.dateError = 'Enddatum darf nicht vor dem Startdatum liegen!';
-        this.duration = undefined;
-      } else {
-        this.dateError = undefined;
-        this.duration = this.taskService.calculateDuration(
-          this.editedTask.startDate,
-          this.editedTask.endDate
-        );
-      }
-    }   
-    
 // 创建一个副本用于编辑, 使用对象的展开（Object Spread）语法，可以不影响原数据
-  enterEditMode(){   
-    this.isEditMode = true;
-    this.editedTask = JSON.parse(JSON.stringify(this.task)); 
-    this.editedTask!.startDate = this.toInputDateFormat(this.task!.startDate);
-    this.editedTask!.endDate = this.toInputDateFormat(this.task!.endDate);    
-  }
-
-  cancelEdit(){
-    this.isEditMode = false;
-    this.editedTask = undefined;
-  }
-
-  saveChanges(){
-    if(this.editedTask){      
-      this.taskService.updateTask(this.editedTask);
-
-      // 更新本地 task?
-      this.task = JSON.parse(JSON.stringify(this.editedTask));
-   
-
-         // 更新员工信息
-      if (this.editedTask.employeeId) {
-        this.employee = this.employeeService.getEmployeeById(this.editedTask.employeeId);
-      } else {
-        this.employee = undefined;
-      }
-
-      // 在编辑模式中更新测试人员
-    if (this.editedTask?.testerId) {
-      this.selectedTester = this.employeeService.getEmployeeById(this.editedTask.testerId);
-    } else {
-      this.selectedTester = undefined;
-    } 
-    this.loadTester();   
-    this.updateDuration();
-
-      this.isEditMode = false;
-      
-    }
-  }
-
+ 
 }
+
+

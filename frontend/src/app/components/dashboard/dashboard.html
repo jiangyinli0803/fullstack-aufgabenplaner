@@ -9,19 +9,19 @@
 <div class="flex flex-row gap-6 my-10">
     <a [routerLink]="['/tasks', 'nicht-zugewiesen']" class="bg-yellow-400 hover:bg-yellow-600 text-white rounded-xl shadow-sm flex flex-col justify-center items-center transition w-xs h-40">
         <span class="text-lg font-bold">Nicht zugewiesen</span>
-        <span class="text-lg font-bold">{{ statusCounts['nicht-zugewiesen'] }}</span>
+        <span class="text-lg font-bold">{{ (statusCounts$ | async)?.nicht-zugewiesen }}</span>
     </a>
    <a [routerLink]="['/tasks', 'offen']" class="bg-blue-400 hover:bg-blue-600 text-white rounded-xl shadow-sm flex flex-col justify-center items-center transition w-xs h-40">
         <span class="text-lg font-bold">Offen</span>
-        <span class="text-lg font-bold">{{ statusCounts['offen'] }}</span>
+        <span class="text-lg font-bold">{{ (statusCounts$ | async)?.offen }}</span>
    </a>
    <a [routerLink]="['/tasks', 'abgeschlossen']" class="bg-green-400 hover:bg-green-600 text-white rounded-xl shadow-sm flex flex-col justify-center items-center transition w-xs h-40">
         <span class="text-lg font-bold">Abgeschlossen</span>
-        <span class="text-lg font-bold">{{ statusCounts['abgeschlossen'] }}</span>
+        <span class="text-lg font-bold">{{ (statusCounts$ | async)?.abgeschlossen }}</span>
    </a>
    <a [routerLink]="['/tasks', 'archiviert']" class="bg-slate-400 hover:bg-slate-600 text-white rounded-xl shadow-sm flex flex-col justify-center items-center transition w-xs h-40">
         <span class="text-lg font-bold">Archiviert</span>
-        <span class="text-lg font-bold">{{ statusCounts['archiviert'] }}</span>
+        <span class="text-lg font-bold">{{ (statusCounts$ | async)?.archiviert }}</span>
    </a>
     
 </div>

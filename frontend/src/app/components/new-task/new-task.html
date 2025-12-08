@@ -42,7 +42,7 @@
         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
          <option *ngFor="let employee of employees" [ngValue]="employee.id">
-          {{ employee.name }} - {{ employee.department }}
+          {{ employee.full_name }} - {{ employee.department }}
         </option>
       </select>
     </div>  

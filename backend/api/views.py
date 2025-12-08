@@ -25,15 +25,18 @@ class TaskViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'start_date', 'priority']
     ordering = ['-created_at']  # 默认排序
 
-    @action(detail=False, methods=['get'])   # /api/tasks/by_status/?status=offen
-    def by_status(self, request):
-        """按状态分组返回任务"""
-        status = request.query_params.get('status')
+    # 可选：支持前端通过 URL 参数过滤
+    def get_queryset(self):
+        queryset = Task.objects.all()
+        
+        # 支持 ?status=open
+        status = self.request.query_params.get('status', None)
+        department = self.request.query_params.get('department', None)
         if status:
-            tasks = self.queryset.filter(status=status)
-            serializer = self.get_serializer(tasks, many=True)
-            return Response(serializer.data)
-        return Response({'error': 'Status parameter required'}, status=400)
+            queryset = queryset.filter(status=status)
+        if department:
+            queryset = queryset.filter(department=department)            
+        return queryset
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()

@@ -28,7 +28,6 @@ export class Overview implements OnInit {
   loading$! : Observable<boolean>;
   error$! : Observable<string|null>;
   currentTasks!: Task[];
-
  
   constructor(
     private taskService: TaskService,
@@ -41,6 +40,7 @@ export class Overview implements OnInit {
   weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];   
 
   ngOnInit() {
+    this.taskService.loadTasks(); // 触发加载
 
     this.tasks$ = this.taskService.tasks$;//xxx$表示可观察对象（Observable）,可观察数据流
     this.employees$ = this.employeeService.employees$;
@@ -48,8 +48,6 @@ export class Overview implements OnInit {
     this.error$ = this.taskService.error$;  
     this.currentTasks = this.taskService.getTasksValue(); 
 
-    this.taskService.loadTasks(); // 触发加载
-    
     this.generateCalendar();
     // 初始化时默认显示今天为中心
     const today = new Date();     
@@ -61,7 +59,7 @@ export class Overview implements OnInit {
     this.taskService.refreshTasks();
   }
   createNewTask(): void {
-    const newTaskData: Partial<Task> = { /* ... 任务数据 ... */ };
+    const newTaskData: Partial<Task> = {};
     this.taskService.createTask(newTaskData as Task).subscribe({
       next: (task) => {
         console.log('Task created successfully:', task);

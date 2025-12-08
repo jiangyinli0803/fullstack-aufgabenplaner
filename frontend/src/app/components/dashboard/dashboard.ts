@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { TaskService } from '../../services000/task.service';
 import { Overview } from '../overview/overview';
+import { TaskService } from '../../services/task.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,11 +13,16 @@ import { Overview } from '../overview/overview';
 })
 export class Dashboard implements OnInit {
 
-  statusCounts: any;
+ statusCounts$!: Observable<{
+    'nicht-zugewiesen': number;
+    'offen': number;
+    'abgeschlossen': number;
+    'archiviert': number;
+  }>;
 
   constructor(private taskService: TaskService){}
 
   ngOnInit(): void {
-    this.statusCounts = this.taskService.getAllStatusCounts();
+    this.statusCounts$ = this.taskService.statusCounts$;
   }
 }

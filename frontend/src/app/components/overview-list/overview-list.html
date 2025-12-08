@@ -15,7 +15,7 @@
         [(ngModel)]="selectedDepartment"
         class="border rounded-lg px-3 py-2"
     >
-        <option *ngFor="let d of departments" [value]="d">
+        <option *ngFor="let d of departments$ | async" [value]="d">
         {{ d }}
         </option>
     </select>
@@ -37,13 +37,13 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let task of tasksWithDuration"
+          *ngFor="let task of tasksWithDuration$ | async"
           (click)="viewTaskDetail(task.id)"
           class="border-b hover:bg-blue-50 transition-colors duration-150 cursor-pointer"
         >
          <td class="px-6 py-3 text-gray-700">{{ task.id }}</td>
           <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.employee.name }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employee.firstname }}</td>
           <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employee.department }}</td>
           <td class="px-6 py-3 text-gray-700 text-sm" [style.background-color]="task.status_color">{{ task.status }}</td>
           <td class="px-6 py-3 text-gray-700 text-sm">{{ task.priority }}</td>

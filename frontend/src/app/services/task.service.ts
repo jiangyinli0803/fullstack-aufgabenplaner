@@ -34,7 +34,7 @@ export class TaskService {
         });
       }
 
-      this.http.get<Task[]>(this.apiUrl + '/', { params }).subscribe({ ///tasks?status=open
+      this.http.get<Task[]>(this.apiUrl + '/', {params}).subscribe({ ///tasks?status=open
         next: (tasks) => {
           this.tasksSubject$.next(tasks); //将获取到的任务数组保存到缓存（BehaviorSubject）
           this.loadingSubject$.next(false);
@@ -63,6 +63,23 @@ export class TaskService {
     );
   }
 
+  statusCounts$ = this.tasks$.pipe(
+    map(tasks => ({
+      'nicht-zugewiesen': tasks.filter(t => t.status === 'nicht-zugewiesen').length,
+      'offen': tasks.filter(t => t.status === 'offen').length,
+      'abgeschlossen': tasks.filter(t => t.status === 'abgeschlossen').length,
+      'archiviert': tasks.filter(t => t.status === 'archiviert').length
+    }))
+  );
+
+  getTasksByDepartment(department: string): Observable<Task[]> {
+    return this.tasks$.pipe(
+      map(tasks => tasks.filter(task => 
+        task.employee?.department === department
+      ))
+    );
+  }
+
   // 通过 pipe 查找单个任务
   getTaskById(id: number): Observable<Task | undefined> {
     return this.tasks$.pipe(
@@ -87,13 +104,27 @@ export class TaskService {
   );
 }
 
-  updateTask(id: number, task: Partial<Task>): Observable<Task> {
-    return this.http.patch<Task>(`${this.apiUrl}/${id}/`, task);
-  }
+updateTask(id: number, task: Partial<Task>): Observable<Task> {
+  return this.http.patch<Task>(`${this.apiUrl}/${id}/`, task).pipe(
+    tap(updatedTask => {
+      const current = this.tasksSubject$.getValue();
+      const index = current.findIndex(t => t.id === id);
+      if (index !== -1) {
+        current[index] = updatedTask;
+        this.tasksSubject$.next([...current]); // 更新缓存
+      }
+    })
+  );
+}
 
   deleteTaskById(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}/`);
-  }
+  return this.http.delete<void>(`${this.apiUrl}/${id}/`).pipe(
+    tap(() => {
+      const current = this.tasksSubject$.getValue();
+      this.tasksSubject$.next(current.filter(t => t.id !== id)); // 更新缓存
+    })
+  );
+}
 
   // 灵活解析日期（支持两种格式，内部统一处理）
 private parseFlexibleDate(dateStr: string): Date | null {

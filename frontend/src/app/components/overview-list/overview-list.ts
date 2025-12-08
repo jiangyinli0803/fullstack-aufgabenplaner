@@ -8,6 +8,7 @@ import { Employee } from '../../models/employee.model';
 import { TaskService } from '../../services/task.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-overview-list',
@@ -17,15 +18,15 @@ import { Observable } from 'rxjs';
   styleUrl: './overview-list.css',
 })
 export class OverviewList {
-   tasks$!: Observable<Task[]>;
-    employees$!: Observable<Employee[]>;
-    loading$! : Observable<boolean>;
-    error$! : Observable<string|null>;
+  tasks$!: Observable<Task[]>; //xxx$表示可观察对象（Observable）,可观察数据流
+  employees$!: Observable<Employee[]>;
+  loading$! : Observable<boolean>;
+  error$! : Observable<string|null>;
+  // ✅ 改为 Observable,自动响应 tasks$ 的变化
+  tasksWithDuration$!: Observable<(Task & {duration?: number})[]>;//重新定义一个组合数组
+  departments$!: Observable<string[]>; 
   
-  selectedDepartment: string = 'alle';
-  departments: string[] = [];
- //重新定义一个组合数组
-  tasksWithDuration: (Task & {duration?:number;})[] = [];
+  selectedDepartment: string = 'alle'; 
 
   constructor( 
     private router: Router,  
@@ -34,41 +35,34 @@ export class OverviewList {
   ) {}
 
   ngOnInit() {
-  this.tasks$ = this.taskService.tasks$;//xxx$表示可观察对象（Observable）,可观察数据流
-    this.employees$ = this.employeeService.employees$;
-    this.loading$ = this.taskService.loading$;
-    this.error$ = this.taskService.error$;  
-    
-
     this.taskService.loadTasks(); // 触发加载
     this.employeeService.loadEmployees();
 
-    this.departments = [
-      'alle',
-      ...new Set(this.employees.map(e => e.department))
-    ];
+    this.tasks$ = this.taskService.tasks$;//加载所有任务
+    this.employees$ = this.employeeService.employees$;
+    this.loading$ = this.taskService.loading$;
+    this.error$ = this.taskService.error$;     
 
-    this.combineTasksWithDuration();
-       
-  }
+    this.departments$ = this.employees$.pipe(
+      map(employees => [
+        'alle',
+        ...new Set(employees.map(e => e.department))
+      ])
+    );   
 
-   
+    this.combineTasksWithDuration()     
+  }   
 
   private combineTasksWithDuration() {
-       // ✅ 关键:将 map 的结果赋值给变量
-      this.tasksWithDuration = this.tasks.map(task => {
-        const duration =this.taskService.calculateDuration(task.start_date, task.end_date);
-
-        // 🔍 调试：检查哪些任务 duration 为空
-        if (duration === undefined) {
-          console.log('Duration 计算失败:', task);
-        }
-      
-        return {
-          ...task,
-          duration     
-        };
-    });
+     this.tasksWithDuration$ = this.tasks$.pipe(
+      map(tasks => tasks.map(task => ({
+        ...task,
+        duration: this.taskService.calculateDuration(
+          task.start_date, 
+          task.end_date
+        )
+      })))
+    );      
   }
       
    viewTaskDetail(taskId: number){
