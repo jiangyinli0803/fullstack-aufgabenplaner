@@ -43,8 +43,8 @@
         >
          <td class="px-6 py-3 text-gray-700">{{ task.id }}</td>
           <td class="px-6 py-3 font-medium text-gray-900">{{ task.title }}</td>
-          <td class="px-6 py-3 text-gray-700">{{ task.employee.firstname }}</td>
-          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employee.department }}</td>
+          <td class="px-6 py-3 text-gray-700">{{ task.employee?.firstname }}</td>
+          <td class="px-6 py-3 text-gray-700 text-sm">{{ task.employee?.department }}</td>
           <td class="px-6 py-3 text-gray-700 text-sm" [style.background-color]="task.status_color">{{ task.status }}</td>
           <td class="px-6 py-3 text-gray-700 text-sm">{{ task.priority }}</td>
           <td class="px-6 py-3 text-gray-700">{{ task.start_date }}</td>

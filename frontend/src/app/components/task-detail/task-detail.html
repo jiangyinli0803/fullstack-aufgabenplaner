@@ -29,14 +29,14 @@
        <!--************************Mitarbeiter***********************-->
       <div>
         <label class="text-gray-600 text-sm font-semibold">Bearbeiter</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ employee?.name || 'Nicht zugewiesen' }}</p>
+        <p class="text-lg" *ngIf="!isEditMode">{{ employee?.full_name || 'Nicht zugewiesen' }}</p>
         <select 
           *ngIf="isEditMode"
-          [(ngModel)]="editedTask!.employeeId"
-          (ngModelChange)="onEmployeeChange($event)"          
+          [(ngModel)]="editedTask!.employee"
+          (ngModelChange)="onEmployeeChange($event)"       
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
           <option [ngValue]="undefined">Bitte wählen</option>
-          <option *ngFor="let emp of employees" [ngValue]="emp.id">{{emp.name}}</option>          
+          <option *ngFor="let emp of employees$ | async" [ngValue]="emp.id">{{emp.full_name}}</option>          
         </select>
       </div>
       
@@ -49,10 +49,10 @@
        <!--************************Datum***********************-->
       <div>
         <label class="text-gray-600 text-sm font-semibold">Startdatum</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ task.startDate }}</p>
+        <p class="text-lg" *ngIf="!isEditMode">{{ task.start_date }}</p>
         <input 
           *ngIf="isEditMode"
-          [(ngModel)]="editedTask!.startDate"
+          [(ngModel)]="editedTask!.start_date"
           (ngModelChange)="updateDuration()"
           type="date"
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
@@ -60,10 +60,10 @@
       
       <div>
         <label class="text-gray-600 text-sm font-semibold">Enddatum</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ task.endDate }}</p>
+        <p class="text-lg" *ngIf="!isEditMode">{{ task.end_date }}</p>
         <input 
           *ngIf="isEditMode"
-          [(ngModel)]="editedTask!.endDate"
+          [(ngModel)]="editedTask!.end_date"
           (ngModelChange)="updateDuration()"
           type="date"
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
@@ -99,16 +99,16 @@
     <div>
     <label class="text-gray-600 text-sm font-semibold">Tester</label>    
     <div>      
-      <p class="text-lg" *ngIf="!isEditMode">{{ selectedTester?.name || 'Kein Tester zugewiesen' }}</p>
+      <p class="text-lg" *ngIf="!isEditMode">{{ selectedTester?.full_name || 'Kein Tester zugewiesen' }}</p>
     
     <!-- 编辑模式：选择测试人员 -->
     <select 
       *ngIf="isEditMode"
-      [(ngModel)]="editedTask!.testerId"     
+      [(ngModel)]="editedTask!.tester"     
       class="text-lg border-2 border-blue-300 rounded px-3 py-2 w-full">
       <option [ngValue]="undefined">Kein Tester zuweisen</option>
-      <option *ngFor="let emp of employees" [ngValue]="emp.id">
-        {{ emp.name }}
+      <option *ngFor="let emp of employees$ | async" [ngValue]="emp.id">
+        {{ emp.full_name }}
       </option>
     </select>
     </div>
@@ -168,8 +168,8 @@
       <div class="bg-gray-50 p-4 rounded-lg border border-gray-400 mb-2"
            *ngFor="let comment of task.comments">
            <div class="flex justify-between">
-                <span class="font-semibold text-gray-700">{{ comment.author }}</span>
-                <span class="text-gray-500">{{ formatTimestamp(comment.timestamp) }}</span>
+                <span class="font-semibold text-gray-700">{{ comment.author_name }}</span>
+                <span class="text-gray-500">{{ formatTimestamp(comment.updated_at) }}</span>
            </div>
            <div class="bg-gray-300 my-2 p-2"> {{comment.text}}</div>
             <!-- 只有作者本人可以修改 -->

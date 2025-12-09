@@ -1,7 +1,19 @@
 
-<div class="flex justify-center w-full">
-  <div class="w-[85vw]">
-      <app-header></app-header>
+<div class="min-h-screen bg-gray-50 flex flex-col">
+  <!-- 固定顶部导航 -->
+  <app-header class="sticky top-0 z-50 bg-white shadow-sm"></app-header>
+  
+  <!-- 主内容区 - 响应式最大宽度 -->
+  <main class="flex-1 w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <router-outlet></router-outlet>
-  </div>
+    </div>
+  </main>
+  
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-gray-200 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+      © 2025 Keßler Solutions. All rights reserved.
+    </div>
+  </footer>
 </div>

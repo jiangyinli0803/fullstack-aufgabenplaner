@@ -81,7 +81,7 @@
 
        <!-- Employee + task Rows -->
   <div class="space-y-2">
-    <div *ngFor="let employee of Employees$ | async" 
+    <div *ngFor="let employee of employees$ | async" 
          class="border-b last:border-b-0 pb-3"> <!-- Employee 分隔线 -->
       
       <div class="grid gap-2 items-center" 
@@ -106,9 +106,9 @@
           <div *ngFor="let task of getEmployeeTasksForGrid(employee.id)"
                [style.grid-column-start]="task.gridColumnStart"
                [style.grid-column-end]="'span ' + task.gridColumnSpan"               
-               [ngClass]="task.color"
+               [ngClass]="task.status_color"
                class="rounded-lg px-3 py-2 text-xs font-medium text-white shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
-               [title]="task.title + ' (' + task.startDate + ' - ' + task.endDate + ')'">
+               [title]="task.title + ' (' + task.start_date + ' - ' + task.end_date + ')'">
             
             <!-- 左侧截断指示 -->
           <span *ngIf="task.isTruncatedLeft" 

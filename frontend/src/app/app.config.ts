@@ -4,7 +4,7 @@ import {providePrimeNG} from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideHttpClient,  withInterceptors} from '@angular/common/http';
+import { provideHttpClient,  withFetch,  withInterceptors} from '@angular/common/http';
 import { createInterceptorCondition, INCLUDE_BEARER_TOKEN_INTERCEPTOR_CONFIG, IncludeBearerTokenCondition, includeBearerTokenInterceptor, KEYCLOAK_EVENT_SIGNAL, KeycloakService, provideKeycloak } from 'keycloak-angular';
 import { dummyKeycloak } from './auth/keycloak.dummy';
 import Keycloak from 'keycloak-js';
@@ -40,6 +40,7 @@ export const appConfig: ApplicationConfig = {
     }),
     // HttpClient - Interceptor nur im Browser
     provideHttpClient(
+      withFetch(),
       isBrowser 
         ? withInterceptors([includeBearerTokenInterceptor])
         : withInterceptors([])

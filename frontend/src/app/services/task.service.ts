@@ -65,7 +65,7 @@ export class TaskService {
 
   statusCounts$ = this.tasks$.pipe(
     map(tasks => ({
-      'nicht-zugewiesen': tasks.filter(t => t.status === 'nicht-zugewiesen').length,
+      'nicht_zugewiesen': tasks.filter(t => t.status === 'nicht_zugewiesen').length,
       'offen': tasks.filter(t => t.status === 'offen').length,
       'abgeschlossen': tasks.filter(t => t.status === 'abgeschlossen').length,
       'archiviert': tasks.filter(t => t.status === 'archiviert').length

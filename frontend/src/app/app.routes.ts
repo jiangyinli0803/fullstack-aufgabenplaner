@@ -13,7 +13,7 @@ export const routes: Routes = [
 
     {path:'', component:Dashboard, title: 'Dashboard'},
     {path:'admin', component:Admin, title: 'Admin Overview', canActivate: [canActivateAuthRole], data: { role: ['admin', 'user'] }},
-    {path: 'tasks/:status', component: TaskList, title: 'Tasks by status'},
+    {path: 'tasks/status/:status', component: TaskList, title: 'Tasks by status'},
     {path:'tasks/department/:department', component: TaskList, title:'Tasks by department'},
     {path:'new-task', component: NewTask, title: 'Create New Task'},    
     {path:'tasks/detail/:id', component:TaskDetail, title:'Aufgabe Detail'},

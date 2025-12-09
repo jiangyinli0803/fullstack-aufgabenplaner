@@ -4,8 +4,7 @@
   position: relative;
   display: flex; 
   align-items: space-around;
-  background-color: #d3e3fd; /* Hintergrund */
-  box-shadow: 0 2px 6px #577b5b1a; /* leichter Schatten */
+ /*background-color: #004976;   Hintergrund */ 
   height: 100px;
 }
 
@@ -16,7 +15,7 @@
   padding: 0.75rem 1rem;
   font-size: 2rem;
   font-weight: 800; 
-  color: #1e1e1ed5;
+  color: #004976;
   text-decoration: none;
   margin-left: 80px;
 }
@@ -27,9 +26,8 @@
   border-radius: 6px;
 }
 
-.active-link {
-  font-weight: bold;
-  color: #eb1919 !important;
+.active-link {  
+ /* color: #eb1919 !important;*/
   border-bottom: 4px solid #eb1919;
 }
 .menu-end{

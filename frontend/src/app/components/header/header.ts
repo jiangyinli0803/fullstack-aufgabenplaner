@@ -14,8 +14,8 @@ import { Hamburgmenu } from '../hamburgmenu/hamburgmenu';
 })
 export class Header {
   menuItems = [      
-      { label: 'Dashboard', routerLink: '/'}
-   
+      { label: 'Dashboard', routerLink: '/'},
+      { label: 'All Tasks', routerLink: '/tasks'},  
     
     ];
 

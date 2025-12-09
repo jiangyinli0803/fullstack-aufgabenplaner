@@ -1,26 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-
 import { CommonModule } from '@angular/common';
 import { Task } from '../../models/task.model';
-
-import { Employee } from '../../models/employee.model';
 import { TaskService } from '../../services/task.service';
-import { EmployeeService } from '../../services/employee.service';
-import { Observable, switchMap } from 'rxjs';
-import { SrvRecord } from 'dns';
+import { map, Observable, switchMap } from 'rxjs';
 
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CommonModule],
   templateUrl: './task-list.html',
   styleUrl: './task-list.css',
 })
 export class TaskList implements OnInit{
   tasks$!: Observable<Task[]>;
-  status: string | null = null;
+  currentStatus$!: Observable<string | null>;
+  currentDepartment$!: Observable<string | null>;
  
    constructor(
     private route: ActivatedRoute, 
@@ -30,12 +26,21 @@ export class TaskList implements OnInit{
   ) {}
 
   ngOnInit() {
+      // ✅ 创建独立的 Observable
+    this.currentStatus$ = this.route.paramMap.pipe(
+      map(params => params.get('status'))
+    );
+
+    this.currentDepartment$ = this.route.paramMap.pipe(
+      map(params => params.get('department'))
+    );
+    
       this.tasks$ = this.route.paramMap.pipe(
       switchMap(params => {
-        this.status = params.get('status');
+        const status = params.get('status');
         const department = params.get('department');
 
-        if (this.status) {
+        if (status) {
           return this.taskService.getTasksByStatus(status);
         }
 

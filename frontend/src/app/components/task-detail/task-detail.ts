@@ -2,13 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
-
+import { Comment } from '../../models/comment.model';
 import { FormsModule } from '@angular/forms';
 
 import { Location } from '@angular/common';
 import { Task } from '../../models/task.model';
 import { Employee } from '../../models/employee.model';
-import { Comment } from '../../models/comment.model';
+
 import { TaskService } from '../../services/task.service';
 import { EmployeeService } from '../../services/employee.service';
 import { Observable, switchMap } from 'rxjs';
@@ -35,6 +35,7 @@ export class TaskDetail implements OnInit{
   employee?: Employee;
   selectedTester?: Employee;
   duration?: number;
+  availableVersions = AVAILABLE_VERSIONS;
   
   // 编辑模式
   isEditMode = false;
@@ -210,7 +211,7 @@ export class TaskDetail implements OnInit{
       });
   }
 
-  onEmployeeChange(selectedEmployeeId: number | undefined): void {
+  onEmployeeChange(selectedEmployeeId: number | null): void {
     if (selectedEmployeeId) {
       this.employeeService.getEmployeeById(selectedEmployeeId)
           .subscribe(employee => {
@@ -310,7 +311,7 @@ export class TaskDetail implements OnInit{
       const comment = targetTask.comments.find(c => c.id === commentId);
       if (comment) {
         comment.text = this.editingCommentText;
-        comment.timestamp = new Date().toISOString();  // 更新时间戳
+        comment.updated_at = new Date().toISOString();  // 更新时间戳
         
         if (!this.isEditMode) {
           this.taskService.updateTask(this.task!.id, { comments: this.task?.comments });
