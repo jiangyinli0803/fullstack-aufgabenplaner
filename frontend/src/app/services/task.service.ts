@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environment/environment';
-import { BehaviorSubject, map, Observable, tap } from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, of, tap } from 'rxjs';
 import { Task } from '../models/task.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
@@ -34,7 +34,7 @@ export class TaskService {
         });
       }
 
-      this.http.get<Task[]>(this.apiUrl + '/', {params}).subscribe({ ///tasks?status=open
+      this.http.get<Task[]>(this.apiUrl + '/', {params}).subscribe({ 
         next: (tasks) => {
           this.tasksSubject$.next(tasks); //将获取到的任务数组保存到缓存（BehaviorSubject）
           this.loadingSubject$.next(false);
@@ -56,12 +56,15 @@ export class TaskService {
       return this.tasksSubject$.getValue();
   }
 
-  // 通过 pipe 过滤任务, Observable才能自动监听任务列表变化，实时更新
-  getTasksByStatus(status: string): Observable<Task[]> {
-    return this.tasks$.pipe(
-      map(tasks => tasks.filter(task => task.status === status))
-    );
-  }
+  // 🔥 改为直接调用后端 API
+getTasksByStatus(status: string): Observable<Task[]> {
+  return this.http.get<Task[]>(`${this.apiUrl}/status/${status}/`).pipe(
+    catchError(err => {
+      console.error('Error loading tasks by status:', err);
+      return of([]);
+    })
+  );
+}
 
   statusCounts$ = this.tasks$.pipe(
     map(tasks => ({
@@ -73,19 +76,17 @@ export class TaskService {
   );
 
   getTasksByDepartment(department: string): Observable<Task[]> {
-    return this.tasks$.pipe(
-      map(tasks => tasks.filter(task => 
-        task.employee?.department === department
-      ))
-    );
-  }
-
-  // 通过 pipe 查找单个任务
-  getTaskById(id: number): Observable<Task | undefined> {
-    return this.tasks$.pipe(
-      map(tasks => tasks.find(task => task.id === id))
-    );
-  }
+  return this.http.get<Task[]>(`${this.apiUrl}/department/${department}/`).pipe(
+    catchError(err => {
+      console.error('Error loading tasks by department:', err);
+      return of([]);
+    })
+  );
+}
+  
+  getTaskById(id: number): Observable<Task> {
+  return this.http.get<Task>(`${this.apiUrl}/${id}/`);
+}
 
   // 通过 pipe 过滤任务（按员工）
   getTasksByEmployee(employeeId: number): Observable<Task[]> {

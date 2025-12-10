@@ -53,11 +53,9 @@ export class EmployeeService {
       return this.employeeSubject$.getValue();
   }
 
-  // 通过 pipe 查找
-  getEmployeeById(id: number): Observable<Employee | undefined> {
-    return this.employees$.pipe(
-      map(employees => employees.find(employee => employee.id === id))
-    );
+  // GET
+  getEmployeeById(id: number): Observable<Employee> {
+    return this.http.get<Employee>(`${this.apiUrl}/${id}/`);
   }
 
   //调用后端接口创建任务（POST）

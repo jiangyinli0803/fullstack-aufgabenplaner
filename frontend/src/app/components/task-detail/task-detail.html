@@ -1,3 +1,11 @@
+   <!-- 错误提示 -->
+  <div *ngIf="error$ | async as error">
+    <p>error: {{ error }}</p>
+  </div> 
+  <div *ngIf="loading$  | async as loading">
+    <p>Loading: {{ loading }}</p>
+  </div>
+
 <div class="mx-auto p-6">
   <div class="bg-white rounded-2xl shadow-md p-8" *ngIf="task">
     <h1  class="text-3xl font-bold mb-6" *ngIf="!isEditMode">Aufgabe Details</h1>
@@ -32,11 +40,11 @@
         <p class="text-lg" *ngIf="!isEditMode">{{ employee?.full_name || 'Nicht zugewiesen' }}</p>
         <select 
           *ngIf="isEditMode"
-          [(ngModel)]="editedTask!.employee"
-          (ngModelChange)="onEmployeeChange($event)"       
+         [value]="editedTask?.employee?.id || ''"
+         (change)="onEmployeeChange($any($event.target).value)"        
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
-          <option [ngValue]="undefined">Bitte wählen</option>
-          <option *ngFor="let emp of employees$ | async" [ngValue]="emp.id">{{emp.full_name}}</option>          
+          <option [value]="null">Bitte wählen</option>
+          <option *ngFor="let emp of employees$ | async" [value]="emp.id">{{emp.full_name}}</option>          
         </select>
       </div>
       

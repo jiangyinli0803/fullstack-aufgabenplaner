@@ -11,7 +11,7 @@ import { Employee } from '../../models/employee.model';
 
 import { TaskService } from '../../services/task.service';
 import { EmployeeService } from '../../services/employee.service';
-import { Observable, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, finalize, Observable, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { CommentService } from '../../services/comment.service';
 
 export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 'v3.0','v3.1','v3.2'];
@@ -25,10 +25,11 @@ export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 
 })
 export class TaskDetail implements OnInit{
   // 响应式数据流
-  task$!: Observable<Task | undefined>;
+  task$!: Observable<Task[]>;
   employees$!: Observable<Employee[]>;
-  loading$!: Observable<boolean>;
-  error$!: Observable<string | null>;
+  loading$ = new BehaviorSubject<boolean>(true); // 如果您想要独立于 service 的加载状态
+   error$ = new BehaviorSubject<string | null>(null);
+  private destroy$ = new Subject<void>();
 
   // 本地状态
   task?: Task;
@@ -51,8 +52,7 @@ export class TaskDetail implements OnInit{
   // 当前用户信息（从认证服务获取）
   currentUser = 'Current User'; // TODO: 从 AuthService 获取
   currentUserId = 123; // TODO: 从 AuthService 获取
-  destroy$: any;
-
+ 
   constructor(
    private route: ActivatedRoute,
     private router: Router,
@@ -63,24 +63,38 @@ export class TaskDetail implements OnInit{
   ){}
 
   ngOnInit(): void {
-     // 1️⃣ 确保数据已加载
-    this.taskService.loadTasks();
+     // 加载员工数据  
+     console.log('开始加载，设置 loading = true'); 
     this.employeeService.loadEmployees();
+    this.employees$ = this.employeeService.employees$;   
 
-    // 2️⃣ 获取响应式数据流
-    this.loading$ = this.taskService.loading$;
-    this.error$ = this.taskService.error$;
-    this.employees$ = this.employeeService.employees$;
-
-    // 3️⃣ 监听路由参数变化，获取任务详情
-    this.route.paramMap.pipe(
+    //  监听路由参数变化，获取任务详情
+     this.route.paramMap.pipe(
+      tap(() => {
+        // 🔥 组件自己控制加载状态
+        this.loading$.next(true);
+        this.error$.next(null);
+      }),
       switchMap(params => {
         const taskId = Number(params.get('id'));
+        console.log('请求任务 ID:', taskId);
         return this.taskService.getTaskById(taskId);
-      })
-      
+      }),
+      catchError(err => {
+        // 🔥 组件自己处理错误
+        console.error('Error loading task:', err);
+        this.error$.next('Error loading task, please try later');
+        return of(null);
+      }),
+      finalize(() => {
+        // 🔥 完成后关闭加载状态
+         console.log('完成加载，设置 loading = false');
+        this.loading$.next(false);
+      }),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (task) => {
+        console.log('收到任务数据:...');
         if (task) {
           this.task = task;
           this.loadEmployeeInfo();
@@ -91,17 +105,10 @@ export class TaskDetail implements OnInit{
           console.error('Task not found');
           this.router.navigate(['/tasks']);
         }
-      },
-      error: (err) => {
-        console.error('Error loading task:', err);
       }
     });
   }
-  
-      ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
-      }
+        
   // ========== 辅助方法 ==========
   private loadComments(): void {
     if (!this.task?.id) return;
@@ -145,19 +152,29 @@ export class TaskDetail implements OnInit{
       );
     }
   }
-    goBack(){
-      this.location.back();
-    }
+  goBack(){
+      if (window.history.length > 1) {
+    this.location.back();
+  } else {
+    // 如果没有历史记录,返回默认列表页
+    this.router.navigate(['/tasks']);
+  }
+    }  
+    
+     ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+      }
 
    // ========== 编辑模式 ==========
 
   enterEditMode(): void {
     if (!this.task) return;
-    
+    console.log('Original Task Employee ID:', this.task.employee?.id);
     this.isEditMode = true;
     // 深拷贝任务对象
     this.editedTask = JSON.parse(JSON.stringify(this.task));
-    
+    console.log('Edited Task Employee ID:', this.editedTask?.employee?.id);
     // 转换日期格式为 input[type="date"] 需要的格式 (yyyy-MM-dd)
     if (this.editedTask?.start_date) {
       this.editedTask.start_date = this.toInputDateFormat(this.editedTask.start_date);
@@ -211,9 +228,10 @@ export class TaskDetail implements OnInit{
       });
   }
 
-  onEmployeeChange(selectedEmployeeId: number | null): void {
-    if (selectedEmployeeId) {
-      this.employeeService.getEmployeeById(selectedEmployeeId)
+  onEmployeeChange(selectedEmployeeId: string): void {
+    const id = selectedEmployeeId ? Number(selectedEmployeeId) : null;
+    if (id) {
+      this.employeeService.getEmployeeById(id)
           .subscribe(employee => {
           this.employee = employee;
           
@@ -267,7 +285,7 @@ export class TaskDetail implements OnInit{
       );
     }
   }
-    // ✅ 添加评论（正确版本）
+    // ✅ 添加评论
  addComment(): void {
   if (!this.newCommentText.trim() || !this.task) {
     return;
@@ -289,7 +307,7 @@ export class TaskDetail implements OnInit{
      .subscribe({
       next: (comment) => {  // ✅ comment 是完整的 Comment 类型（后端返回）
         console.log('Comment created:', comment);
-        this.comments.push(comment);  // ✅ 现在没有类型错误了
+        this.comments.push(comment);  // 
         this.newCommentText = '';
       },
       error: (err) => {
@@ -371,6 +389,7 @@ export class TaskDetail implements OnInit{
     }
  
 // 创建一个副本用于编辑, 使用对象的展开（Object Spread）语法，可以不影响原数据
+ 
  
 }
 

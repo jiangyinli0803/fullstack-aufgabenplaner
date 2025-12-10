@@ -37,7 +37,7 @@ class Employee(models.Model):
     firstname = models.CharField(max_length=100)
     lastname = models.CharField(max_length=100, default='Unbekannt')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="staff")    
-    department = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True, db_index=True)
     is_active = models.BooleanField(default=True)  # 可用来禁用员工账户
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)  # 自动记录修改时间
@@ -77,7 +77,8 @@ class Task(models.Model):
     status = models.CharField(
         max_length=20, 
         choices=[(s.key, s.label) for s in STATUS_CHOICES], 
-        default='nicht_zugewiesen'
+        default='nicht_zugewiesen',
+        db_index=True
     )
     start_date = models.DateField()
     end_date = models.DateField()  
@@ -123,10 +124,12 @@ class Task(models.Model):
         verbose_name = "Aufgabe"
         verbose_name_plural = "Aufgaben"
         indexes = [
+            models.Index(fields=['-created_at']),
             models.Index(fields=['status', 'priority']),
             models.Index(fields=['employee', 'status']),
             models.Index(fields=['start_date', 'end_date']),
         ]
+
     def __str__(self):
         return self.title
     

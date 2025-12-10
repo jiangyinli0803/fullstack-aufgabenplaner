@@ -27,16 +27,24 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     # 可选：支持前端通过 URL 参数过滤
     def get_queryset(self):
-        queryset = Task.objects.all()
-        
-        # 支持 ?status=open
-        status = self.request.query_params.get('status', None)
-        department = self.request.query_params.get('department', None)
-        if status:
-            queryset = queryset.filter(status=status)
-        if department:
-            queryset = queryset.filter(department=department)            
+         # 🔥 关键优化: select_related 预加载关联对象
+        queryset = Task.objects.select_related(
+            'created_by',  # 如果是 ForeignKey
+            'employee',
+            'tester',
+            'updated_by'    
+        ).all()
         return queryset
+        
+    def list_by_status(self, request, status):
+        queryset = self.get_queryset().filter(status=status)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def list_by_department(self, request, department):
+        queryset = self.get_queryset().filter(department=department)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()

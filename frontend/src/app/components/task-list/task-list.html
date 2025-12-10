@@ -1,12 +1,21 @@
 
-<div class="p-6">
+   <!-- 错误提示 -->
+  <div *ngIf="error$ | async as error">
+    <p>{{ error }}</p>
+  </div> 
+  <div *ngIf="loading$  | async as loading">
+    <p>loading: {{ loading }}</p>
+  </div>   
+
+ <!-- 主包这里的条件判断 *ngIf="!(loading$ | async) && !(error$ | async)"很关键，如果false将造成以下内容不加载 -->
+  <div  class="p-6">
     @if (currentStatus$ | async; as status) {
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Status: {{ status }}</h2>
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Stsatus: {{ status }}</h2>
   }
 
   @if (currentDepartment$ | async; as department) {
     <h2 class="text-2xl font-semibold text-gray-800 mb-4">Department: {{ department }}</h2>
-  } 
+  }  
  
   <div class="overflow-x-auto bg-white rounded-2xl shadow-md">
     <table class="min-w-full border-collapse">

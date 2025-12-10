@@ -8,5 +8,10 @@ router.register(r'employees', EmployeeViewSet) #r'employees'--URL path 的前缀
 router.register(r'comments', CommentViewSet)
 
 urlpatterns = [
+     # 🔥 自定义路径必须放在 router 之前（更具体的路由优先）
+    path('tasks/status/<str:status>/', TaskViewSet.as_view({'get': 'list_by_status'}), name='tasks-by-status'),
+    path('tasks/department/<str:department>/', TaskViewSet.as_view({'get': 'list_by_department'}), name='tasks-by-department'),
+
     path('', include(router.urls)),
+    
 ]
