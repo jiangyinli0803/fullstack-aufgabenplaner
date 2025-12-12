@@ -13,20 +13,15 @@ export class CommentService {
  
   // 私有状态
   private commentsSubject$ = new BehaviorSubject<Comment[]>([]);
-  private loadingSubject$ = new BehaviorSubject<boolean>(false);
-  private errorSubject$ = new BehaviorSubject<string | null>(null);
-
+ 
   // 公开的 Observable（只读）
   public comments$ = this.commentsSubject$.asObservable();
-  public loading$ = this.loadingSubject$.asObservable();
-  public error$ = this.errorSubject$.asObservable();
+  
 
   constructor(private http: HttpClient) {}
 
   // 加载所有评论到缓存
-  loadComments(filters?: any): void {
-    this.loadingSubject$.next(true);
-    this.errorSubject$.next(null);
+  loadComments(filters?: any): void {  
 
     let params = new HttpParams();
     if (filters) {
@@ -39,13 +34,10 @@ export class CommentService {
 
     this.http.get<Comment[]>(this.apiUrl + '/', { params }).subscribe({
       next: (comments) => {
-        this.commentsSubject$.next(comments);
-        this.loadingSubject$.next(false);
+        this.commentsSubject$.next(comments);        
       },
       error: (err) => {
-        console.error('Error loading comments:', err);
-        this.errorSubject$.next('Failed to load comments');
-        this.loadingSubject$.next(false);
+        console.error('Error loading comments:', err);        
       }
     });
   }
@@ -60,54 +52,68 @@ export class CommentService {
     return this.commentsSubject$.getValue();
   }
 
-  // 通过 pipe 按任务ID过滤评论
+  // GET /api/comments/?task_id=72 - 根据task_id过滤评论
   getCommentsByTaskId(taskId: number): Observable<Comment[]> {
-    return this.comments$.pipe(
-      map(comments => comments.filter(comment => comment.task_id === taskId))
-    );
+     const params = new HttpParams().set('task_id', taskId.toString());
+     return this.http.get<Comment[]>(this.apiUrl + '/', { params }).pipe(
+    tap(comments => this.commentsSubject$.next(comments))
+  );
   }
 
-  // 通过 pipe 查找单个评论
-  getCommentById(id: number): Observable<Comment | undefined> {
-    return this.comments$.pipe(
-      map(comments => comments.find(comment => comment.id === id))
-    );
+  // GET /api/comments/{id}/ - 获取单个评论
+  getCommentById(id: number): Observable<Comment> {
+     return this.http.get<Comment>(`${this.apiUrl}/${id}/`);
   }
 
-  // 通过 pipe 按用户ID过滤评论（如果有user_id字段）
-  getCommentsByUserId(userId: number): Observable<Comment[]> {
-    return this.comments$.pipe(
-      map(comments => comments.filter(comment => comment.author_id === userId))
-    );
+  // GET /api/comments/?author_id=1 - 按用户ID过滤评论
+  getCommentsByAuthorId(authorId: number): Observable<Comment[]> {
+    const params = new HttpParams().set('author_id', authorId.toString());
+    return this.http.get<Comment[]>(this.apiUrl + '/', { params });
   }
 
   // ===== 修改操作（同时更新缓存和后端）=====
 
-  createComment(comment: Comment): Observable<Comment> {
+  createComment(comment: Partial<Comment>): Observable<Comment> {
     return this.http.post<Comment>(this.apiUrl + '/', comment).pipe(
-      tap(newComment => {
+      tap({
+      next: (newComment) => {
         const current = this.commentsSubject$.getValue();
-        this.commentsSubject$.next([...current, newComment]); // 更新缓存
+        this.commentsSubject$.next([...current, newComment]);
+      },
+      error: (error) => {
+        console.error('Failed to create comment:', error);
+        // 不更新缓存
+      }
       })
     );
   }
 
   updateComment(id: number, comment: Partial<Comment>): Observable<Comment> {
     return this.http.patch<Comment>(`${this.apiUrl}/${id}/`, comment).pipe(
-      tap(updatedComment => {
+    tap({
+      next: (updatedComment) => {
         const current = this.commentsSubject$.getValue();
         const updated = current.map(c => c.id === id ? updatedComment : c);
-        this.commentsSubject$.next(updated); // 更新缓存
-      })
+        this.commentsSubject$.next(updated);
+      },
+      error: (error) => {
+        console.error('Failed to update comment:', error);
+      }
+    }),
     );
   }
 
   deleteCommentById(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}/`).pipe(
-      tap(() => {
+    tap({
+      next: () => {
         const current = this.commentsSubject$.getValue();
-        this.commentsSubject$.next(current.filter(c => c.id !== id)); // 更新缓存
-      })
+        this.commentsSubject$.next(current.filter(c => c.id !== id));
+      },
+      error: (error) => {
+        console.error('Failed to delete comment:', error);
+      }
+    }),
     );
   }
 }

@@ -14,13 +14,11 @@ class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     task_id = serializers.PrimaryKeyRelatedField(
         source='task',           # 指向 Model 中的 task 字段
-        queryset=Task.objects.all(),
-        write_only=False         # 读写都可见
+        queryset=Task.objects.all(),        
     )
     author_id = serializers.PrimaryKeyRelatedField(
         source='author',           # 指向 Model 中的 author 字段
-        queryset=Task.objects.all(),
-        write_only=False         # 读写都可见
+        queryset=Employee.objects.all(),        
     )
     
     class Meta:

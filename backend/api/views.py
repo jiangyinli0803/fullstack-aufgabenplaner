@@ -50,9 +50,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     
+   
     def get_queryset(self):
         queryset = super().get_queryset()
+
+         # // GET /api/comments/?task_id=72 - 根据task_id过滤评论
         task_id = self.request.query_params.get('task_id')
         if task_id:
             queryset = queryset.filter(task_id=task_id)
+
+         # 按 author_id (user_id) 过滤
+        author_id = self.request.query_params.get('author_id')
+        if author_id:
+            queryset = queryset.filter(author_id=author_id)
+            
         return queryset

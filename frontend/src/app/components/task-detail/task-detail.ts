@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
@@ -6,35 +6,35 @@ import { Comment } from '../../models/comment.model';
 import { FormsModule } from '@angular/forms';
 
 import { Location } from '@angular/common';
-import { Task } from '../../models/task.model';
+import { Task, TaskUpdateDTO } from '../../models/task.model';
 import { Employee } from '../../models/employee.model';
 
 import { TaskService } from '../../services/task.service';
 import { EmployeeService } from '../../services/employee.service';
-import { BehaviorSubject, catchError, finalize, Observable, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import { catchError, finalize, Observable, of, pipe, Subject, switchMap, takeUntil, tap } from 'rxjs';
 import { CommentService } from '../../services/comment.service';
+import { PriorityLabelPipe } from '../../pipes/priority-label.pipe';
 
-export const AVAILABLE_VERSIONS = ['v1.0','v1.1', 'v1.2','v2.0','v2.1', 'v2.2', 'v3.0','v3.1','v3.2'];
+export const AVAILABLE_VERSIONS = ['V1.0','V1.1', 'V1.2','V2.0','V2.1', 'V2.2', 'V3.0','V3.1','V3.2'];
 
 @Component({
   selector: 'app-task-detail',
   standalone: true, 
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PriorityLabelPipe],
   templateUrl: './task-detail.html',
   styleUrl: './task-detail.css',
 })
 export class TaskDetail implements OnInit{
-  // 响应式数据流
-  task$!: Observable<Task[]>;
-  employees$!: Observable<Employee[]>;
-  loading$ = new BehaviorSubject<boolean>(true); // 如果您想要独立于 service 的加载状态
-   error$ = new BehaviorSubject<string | null>(null);
+
+  employees$? : Observable<Employee[]>;
+  comments$?: Observable<Comment[]>;  
   private destroy$ = new Subject<void>();
 
   // 本地状态
   task?: Task;
-  employee?: Employee;
-  selectedTester?: Employee;
+  selectedEmployee?: Employee | null;
+  employees: Employee[] = []
+  selectedTester?: Employee | null;
   duration?: number;
   availableVersions = AVAILABLE_VERSIONS;
   
@@ -42,61 +42,61 @@ export class TaskDetail implements OnInit{
   isEditMode = false;
   editedTask?: Task;
   dateError?: string;
+  editedTaskEmployeeId?: number | null;
+  editedTaskTesterId: number | null = null;
 
   // 评论相关
+ 
   comments: Comment[] = [];  // 评论单独管理
   newCommentText = '';
-  editingCommentId?: number;
+  editingCommentId?: number | null;
   editingCommentText = '';
 
   // 当前用户信息（从认证服务获取）
   currentUser = 'Current User'; // TODO: 从 AuthService 获取
-  currentUserId = 123; // TODO: 从 AuthService 获取
+  currentUserId = 9; // TODO: 从 AuthService 获取
+   
  
   constructor(
    private route: ActivatedRoute,
     private router: Router,
     private location: Location,
     private taskService: TaskService,
-     private commentService: CommentService,
-    private employeeService: EmployeeService
-  ){}
+    private commentService: CommentService,
+    private employeeService: EmployeeService,
+  ){  
+  }
+
 
   ngOnInit(): void {
-     // 加载员工数据  
-     console.log('开始加载，设置 loading = true'); 
+        // 绑定到 async 管道   
+   this.employees$ = this.employeeService.employees$; 
+     
+   this. comments$ = this.commentService.comments$;
+  
+    // ✅ 1. 加载所有员工（不需要订阅，因为已经在 service 内部处理了）
     this.employeeService.loadEmployees();
-    this.employees$ = this.employeeService.employees$;   
 
     //  监听路由参数变化，获取任务详情
-     this.route.paramMap.pipe(
-      tap(() => {
-        // 🔥 组件自己控制加载状态
-        this.loading$.next(true);
-        this.error$.next(null);
-      }),
+     this.route.paramMap.pipe(      
       switchMap(params => {
         const taskId = Number(params.get('id'));
         console.log('请求任务 ID:', taskId);
         return this.taskService.getTaskById(taskId);
       }),
-      catchError(err => {
-        // 🔥 组件自己处理错误
-        console.error('Error loading task:', err);
-        this.error$.next('Error loading task, please try later');
+      catchError(err => {      
+        console.error('Error loading task:', err);       
         return of(null);
       }),
       finalize(() => {
-        // 🔥 完成后关闭加载状态
-         console.log('完成加载，设置 loading = false');
-        this.loading$.next(false);
+         console.log('完成加载，设置 loading = false');        
       }),
       takeUntil(this.destroy$)
     ).subscribe({
       next: (task) => {
         console.log('收到任务数据:...');
         if (task) {
-          this.task = task;
+          this.task = task;   //current Task
           this.loadEmployeeInfo();
           this.loadComments(); 
           this.loadTester();
@@ -113,34 +113,27 @@ export class TaskDetail implements OnInit{
   private loadComments(): void {
     if (!this.task?.id) return;
 
-    this.commentService.getCommentsByTaskId(this.task.id)
-        .subscribe({
-        next: (comments) => {
-          this.comments = comments;
-        },
-        error: (err) => {
-          console.error('Error loading comments:', err);
-        }
-      });
+    this.commentService.getCommentsByTaskId(this.task.id).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (comments) => console.log('Comments loaded:', comments),
+      error: (err) => console.error('Error loading comments:', err)
+    });
   }
 
   private loadEmployeeInfo(): void {
-    if (this.task?.employee?.id) {
-      this.employeeService.getEmployeeById(this.task.employee.id)
-          .subscribe(employee => {
-          this.employee = employee;
-        });
+    if (this.task?.employee) {
+      this.selectedEmployee = this.task?.employee;       
+    } else {
+      this.selectedEmployee = null;
     }
   }
-
+  
   private loadTester(): void {
-    if (this.task?.tester?.id) {
-      this.employeeService.getEmployeeById(this.task.tester.id)       
-        .subscribe(tester => {
-          this.selectedTester = tester;
-        });
+    if (this.task?.tester) {
+      this.selectedTester = this.task?.tester;       
     } else {
-      this.selectedTester = undefined;
+      this.selectedTester = null;
     }
   }
 
@@ -172,25 +165,23 @@ export class TaskDetail implements OnInit{
     if (!this.task) return;
     console.log('Original Task Employee ID:', this.task.employee?.id);
     this.isEditMode = true;
-    // 深拷贝任务对象
-    this.editedTask = JSON.parse(JSON.stringify(this.task));
-    console.log('Edited Task Employee ID:', this.editedTask?.employee?.id);
-    // 转换日期格式为 input[type="date"] 需要的格式 (yyyy-MM-dd)
-    if (this.editedTask?.start_date) {
-      this.editedTask.start_date = this.toInputDateFormat(this.editedTask.start_date);
+    // 浅拷贝任务对象
+    this.editedTask = {...this.task };
+    if (this.editedTask.employee) {      
+      this.editedTaskEmployeeId = this.editedTask.employee.id; 
     }
-    if (this.editedTask?.end_date) {
-      this.editedTask.end_date = this.toInputDateFormat(this.editedTask.end_date);
-    }
+    if (this.editedTask.tester) {      
+      this.editedTaskTesterId = this.editedTask.tester.id; 
+    }      
   }
 
-    cancelEdit(): void {
+  cancelEdit(): void {
     this.isEditMode = false;
     this.editedTask = undefined;
     this.dateError = undefined;
   }
 
-   saveChanges(): void {
+  saveChanges(): void {
     if (!this.editedTask || !this.task) return;
 
     // 验证日期
@@ -204,8 +195,24 @@ export class TaskDetail implements OnInit{
       }
     }
 
+    // ✅ 关键：将编辑的 employeeId 赋给 editedTask.employeeId      
+     /*  this.editedTask!.employee = this.employees.find(e => e.id === this.editedTaskEmployeeId) || null;  
+      this.editedTask!.tester = this.employees.find(e => e.id === this.editedTaskTesterId) || null;
+ */
+    const updateData : TaskUpdateDTO = {
+      title: this.editedTask.title,
+      description: this.editedTask.description,
+      status: this.editedTask.status,
+      priority: this.editedTask.priority,
+      start_date: this.editedTask.start_date,
+      end_date: this.editedTask.end_date,
+      version: this.editedTask.version,
+      employee_id: this.editedTaskEmployeeId || null,  // ✅ 使用 employee_id
+      tester_id: this.editedTaskTesterId || null      // ✅ 使用 tester_id
+  };
+
      // ✅ 调用后端 API 更新任务
-    this.taskService.updateTask(this.task.id, this.editedTask)
+    this.taskService.updateTask(this.task.id, updateData)
         .subscribe({
         next: (updatedTask) => {
           console.log('Task updated successfully:', updatedTask);
@@ -218,7 +225,6 @@ export class TaskDetail implements OnInit{
           
           // 退出编辑模式
           this.isEditMode = false;
-          this.editedTask = undefined;
           this.dateError = undefined;
         },
         error: (err) => {
@@ -226,43 +232,6 @@ export class TaskDetail implements OnInit{
           alert('保存失败，请重试');
         }
       });
-  }
-
-  onEmployeeChange(selectedEmployeeId: string): void {
-    const id = selectedEmployeeId ? Number(selectedEmployeeId) : null;
-    if (id) {
-      this.employeeService.getEmployeeById(id)
-          .subscribe(employee => {
-          this.employee = employee;
-          
-          // 如果在编辑模式，更新 editedTask
-          if (this.isEditMode && this.editedTask) {
-            this.editedTask.employee = employee;
-          }
-        });
-    } else {
-      this.employee = undefined;
-      if (this.isEditMode && this.editedTask) {
-        this.editedTask.employee = undefined;
-      }
-    }
-  }
-
-   onTesterChange(selectedTesterId: number | undefined): void {
-    if (selectedTesterId) {
-      this.employeeService.getEmployeeById(selectedTesterId)       
-        .subscribe(tester => {
-          this.selectedTester = tester;          
-          if (this.isEditMode && this.editedTask) {
-            this.editedTask.tester = tester;
-          }
-        });
-    } else {
-      this.selectedTester = undefined;
-      if (this.isEditMode && this.editedTask) {
-        this.editedTask.tester = undefined;
-      }
-    }
   }
 
   updateDuration(): void {
@@ -291,23 +260,17 @@ export class TaskDetail implements OnInit{
     return;
   }
 
-  const newComment: Comment = {
-    id: -Date.now(),  // 临时负数 ID
-    task_id: this.task.id,
-    task_title: this.task.title,
+  const newComment: Partial<Comment> = {
+    task_id: this.task.id,   
     text: this.newCommentText,
-    author_id: this.currentUserId,
-    author_name: this.currentUser,
-    is_edited: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    author_id: this.currentUserId,   
   };
 
   this.commentService.createComment(newComment)
      .subscribe({
       next: (comment) => {  // ✅ comment 是完整的 Comment 类型（后端返回）
+        this.loadComments();  //加上这个之后，最新的评论能放最前
         console.log('Comment created:', comment);
-        this.comments.push(comment);  // 
         this.newCommentText = '';
       },
       error: (err) => {
@@ -317,26 +280,44 @@ export class TaskDetail implements OnInit{
     });
 }
 
+    //进入编辑评论模式
+  enterEditComment(comment: Comment){
+    this.editingCommentId = comment.id;
+    this.editingCommentText = comment.text;
+  }
+
+  cancelEditComment(){
+    this.editingCommentId = null;
+    this.editingCommentText = '';
+  }
+  
+
      // 保存编辑后的评论
-   saveEditComment(commentId: number) {
+  saveEditComment(commentId: number) {
     if (!this.editingCommentText.trim()) {
       return;
     }
 
-    const targetTask = this.isEditMode ? this.editedTask : this.task;
-    
-    if (targetTask?.comments) {
-      const comment = targetTask.comments.find(c => c.id === commentId);
-      if (comment) {
-        comment.text = this.editingCommentText;
-        comment.updated_at = new Date().toISOString();  // 更新时间戳
+    const updatedData: Partial<Comment> = {
+    text: this.editingCommentText
+    }      
         
-        if (!this.isEditMode) {
-          this.taskService.updateTask(this.task!.id, { comments: this.task?.comments });
-        }
+    this.commentService.updateComment(commentId, updatedData)
+    .subscribe({
+      next: (updatedComment) => {
+        console.log('Comment updated:', updatedComment);
+             // 退出编辑模式
+        this.editingCommentId = null;
+        this.editingCommentText = '';
+
+        this.loadComments(); // 重新加载评论，让 UI 反映更新
+      },
+      error: (err) => {
+        console.error('Error updating comment:', err);        
       }
-    }
-   }
+    });
+}
+  
 
   // 检查是否是评论作者
   isCommentAuthor(comment: Comment): boolean {
@@ -353,8 +334,6 @@ export class TaskDetail implements OnInit{
         .subscribe({
         next: () => {
           console.log('Comment deleted');
-          // 从本地列表移除
-          this.comments = this.comments.filter(c => c.id !== commentId);
         },
         error: (err) => {
           console.error('Error deleting comment:', err);
@@ -363,7 +342,7 @@ export class TaskDetail implements OnInit{
       });
   }
 
-  //
+  //转换成德国日期显示格式
     formatTimestamp(timestamp: string): string {
      // 确保是 Date 对象
     const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
@@ -377,8 +356,10 @@ export class TaskDetail implements OnInit{
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    return `${day}.${month}.${year}`; // 输出格式: '22.10.2025'
+    return `${day}.${month}.${year} ${hours}:${minutes}`; // 输出格式: '22.10.2025 12:00'
   }
 
   // 将我的日期格式转换成标准的ISO格式yyyy-MM-dd

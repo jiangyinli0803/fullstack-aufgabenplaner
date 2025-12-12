@@ -9,3 +9,5 @@ export const PRIORITY_CHOICES: Priority[] = [
   { value: 'high', label: 'Hoch' },
   { value: 'urgent', label: 'Dringend' },
 ];
+
+export type PriorityKey = 'low' | 'medium' | 'high' | 'urgent';

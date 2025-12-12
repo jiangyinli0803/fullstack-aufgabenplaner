@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environment/environment';
 import { BehaviorSubject, catchError, map, Observable, of, tap } from 'rxjs';
-import { Task } from '../models/task.model';
+import { Task, TaskUpdateDTO } from '../models/task.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
+
 
 @Injectable({
   providedIn: 'root'
@@ -105,8 +106,8 @@ getTasksByStatus(status: string): Observable<Task[]> {
   );
 }
 
-updateTask(id: number, task: Partial<Task>): Observable<Task> {
-  return this.http.patch<Task>(`${this.apiUrl}/${id}/`, task).pipe(
+updateTask(id: number, taskDto: Partial<Task> | TaskUpdateDTO): Observable<Task> {
+  return this.http.patch<Task>(`${this.apiUrl}/${id}/`, taskDto).pipe(
     tap(updatedTask => {
       const current = this.tasksSubject$.getValue();
       const index = current.findIndex(t => t.id === id);

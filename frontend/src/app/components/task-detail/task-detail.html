@@ -1,59 +1,90 @@
-   <!-- 错误提示 -->
-  <div *ngIf="error$ | async as error">
-    <p>error: {{ error }}</p>
-  </div> 
-  <div *ngIf="loading$  | async as loading">
-    <p>Loading: {{ loading }}</p>
-  </div>
+ 
 
 <div class="mx-auto p-6">
-  <div class="bg-white rounded-2xl shadow-md p-8" *ngIf="task">
-    <h1  class="text-3xl font-bold mb-6" *ngIf="!isEditMode">Aufgabe Details</h1>
-    <h1  class="text-3xl font-bold mb-6" *ngIf="isEditMode">Aufgabe Bearbeiten</h1>
+  <h1  class="text-3xl font-bold mb-6 text-center" *ngIf="!isEditMode">Aufgabe Details</h1>
+  <h1  class="text-3xl font-bold mb-6 text-center" *ngIf="isEditMode">Aufgabe Bearbeiten</h1>
+  
+  <div class="bg-white rounded-2xl shadow-md p-8" *ngIf="task">    
 
-    <div class="mb-6">
-      <label class="text-gray-600 text-sm font-semibold">Aufgabentitel</label>
-      <p class="text-lg font-bold" *ngIf="!isEditMode">{{ task.title }}</p>
-      <input 
-        *ngIf="isEditMode"
-        [(ngModel)]="editedTask!.title"
-        class="text-lg font-bold border-2 border-blue-300 rounded px-3 py-1 w-full mr-4"
-        type="text">      
-      
+<!--************************Titel***********************-->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:space-x-3">
+    <div class="mb-4 md:mb-0">       
+        <p class="text-2xl font-bold" *ngIf="!isEditMode">{{ task.title }}</p>
+        <input 
+          *ngIf="isEditMode"
+          [(ngModel)]="editedTask!.title"
+          class="text-2xl font-bold border-2 border-blue-300 rounded px-3 py-1 w-full"
+          type="text">
     </div>
 
-    <div class="mb-6">
-      <label class="text-gray-600 text-sm font-semibold">Beschreibung</label>
-      <p class="text-lg" *ngIf="!isEditMode">{{ task.description }}</p>
-      <textarea 
-        *ngIf="isEditMode"
-        [(ngModel)]="editedTask!.description"
-        class="text-lg border-2 border-blue-300 rounded px-3 py-2 w-full"
-        rows="3"></textarea>
+    <div class="flex items-center space-x-3 ">
+        <span [style.backgroundColor]="task.status_color" 
+              class="px-3 py-1 text-sm font-semibold text-white rounded-full shadow-md">
+            {{ task.status }}
+        </span>
+        
+        <span *ngIf="task.is_overdue" 
+              class="px-3 py-1 text-sm font-semibold text-red-700 bg-red-100 rounded-full border border-red-400">
+            💥 Überfällig
+        </span>
+
+        <span *ngIf="task.priority | priorityLabel as p" >  
+            <span [ngClass]="p.color" class="px-3 py-1 text-sm font-semibold text-white rounded-full">
+              🔥 Priorität: {{ p.label }}</span>
+        </span>
     </div>
+    </div>
+<!--************************Beschreibung***********************-->
+    <div class="mb-6">
+    <label class="text-gray-600 text-sm font-semibold">Beschreibung</label>
+    <div class="text-lg">
+        <p *ngIf="!isEditMode">{{ task.description }}</p>
+        <textarea 
+          *ngIf="isEditMode"
+          [(ngModel)]="editedTask!.description"
+          class=" border-2 border-blue-300 rounded px-3 py-1 w-full"
+          ></textarea>
+    </div>
+</div>
     
     
-    <div class="grid grid-cols-2 gap-6 mb-4">
-       <!--************************Mitarbeiter***********************-->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 mb-8">
+       <!--************************Bearbeiter***********************-->
       <div>
         <label class="text-gray-600 text-sm font-semibold">Bearbeiter</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ employee?.full_name || 'Nicht zugewiesen' }}</p>
+        <p class="text-lg" *ngIf="!isEditMode">{{ selectedEmployee?.full_name || 'Nicht zugewiesen' }}</p>
         <select 
           *ngIf="isEditMode"
-         [value]="editedTask?.employee?.id || ''"
-         (change)="onEmployeeChange($any($event.target).value)"        
+          [(ngModel)]="editedTaskEmployeeId"                  
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
-          <option [value]="null">Bitte wählen</option>
-          <option *ngFor="let emp of employees$ | async" [value]="emp.id">{{emp.full_name}}</option>          
-        </select>
+          <option [ngValue]="null">Nicht zugewiesen</option>
+          <option *ngFor="let emp of employees$ | async" [ngValue]="emp.id">{{emp.full_name}}</option>          
+        </select>       
       </div>
       
       <div>
         <label class="text-gray-600 text-sm font-semibold">Abteilung</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ employee?.department || '-' }}</p>
-        <p class="text-lg border-2 border-gray-300 px-3 py-1 w-full" *ngIf="isEditMode">{{ employee?.department || '-' }}</p>
+        <p class="text-lg" *ngIf="!isEditMode">{{ selectedEmployee?.department || '-' }}</p>
+        <p class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full" *ngIf="isEditMode">{{ selectedEmployee?.department || '-' }}</p>
       </div>
-    
+        <!--************************Priority***********************-->
+         <div>
+        <label class="text-gray-600 text-sm font-semibold">Priorität</label>
+        <p *ngIf="!isEditMode" class="text-lg">
+          <span *ngIf="task.priority | priorityLabel as p">
+            <span class="font-medium">{{ p.label }}</span>
+          </span>
+        </p>
+        <select 
+          *ngIf="isEditMode"
+          [(ngModel)]="editedTask!.priority"
+          class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">        
+          <option value="low">Niedrig</option>
+          <option value="medium">Mittel</option>
+          <option value="high">Hoch</option>
+          <option value="urgent">Dringend</option>
+        </select>
+      </div>
        <!--************************Datum***********************-->
       <div>
         <label class="text-gray-600 text-sm font-semibold">Startdatum</label>
@@ -76,7 +107,17 @@
           type="date"
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">
       </div>
-
+  <!--************************Dauer***********************-->
+       <div>
+        <label class="text-gray-600 text-sm font-semibold">Dauer/Tage</label>
+        <p class="text-lg" *ngIf="!isEditMode">{{ duration || '–' }}</p>
+        <p class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full" *ngIf="isEditMode">
+           {{ duration || '–' }} </p>   
+        <!-- 🔔 错误提示 -->
+        <p *ngIf="dateError" class="text-red-500 text-sm mt-1">
+          {{ dateError }}
+        </p>      
+      </div>
       <!--************************STATUS***********************-->
       <div>
         <label class="text-gray-600 text-sm font-semibold">Status</label>
@@ -85,23 +126,14 @@
           *ngIf="isEditMode"
           [(ngModel)]="editedTask!.status"
           class="text-lg border-2 border-blue-300 rounded px-3 py-1 w-full">        
-          <option value="nicht-zugewiesen">Nicht zugewiesen</option>
+          <option value="nicht_zugewiesen">Nicht zugewiesen</option>
           <option value="offen">Offen</option>
           <option value="abgeschlossen">Abgeschlossen</option>
           <option value="archiviert">Archiviert</option>
         </select>
       </div>
       
-      <div>
-        <label class="text-gray-600 text-sm font-semibold">Dauer/Tage</label>
-        <p class="text-lg" *ngIf="!isEditMode">{{ duration || '–' }}</p>
-        <p class="text-lg border-2 border-gray-300 rounded px-3 py-1 w-full" *ngIf="isEditMode">
-           {{ duration || '–' }} </p>   
-        <!-- 🔔 错误提示 -->
-        <p *ngIf="dateError" class="text-red-500 text-sm mt-1">
-          {{ dateError }}
-        </p>      
-      </div>
+     
 
     <!-- 测试人员部分 -->
     <div>
@@ -112,9 +144,9 @@
     <!-- 编辑模式：选择测试人员 -->
     <select 
       *ngIf="isEditMode"
-      [(ngModel)]="editedTask!.tester"     
+      [(ngModel)]="editedTaskTesterId"     
       class="text-lg border-2 border-blue-300 rounded px-3 py-2 w-full">
-      <option [ngValue]="undefined">Kein Tester zuweisen</option>
+      <option [ngValue]="null">Kein Tester zugeweisen</option>
       <option *ngFor="let emp of employees$ | async" [ngValue]="emp.id">
         {{ emp.full_name }}
       </option>
@@ -135,10 +167,31 @@
             {{ version }}
           </option>
         </select>
-      </div>
-
-    </div>     
+      </div>   
     
+    <!--  System Informationen -->   
+    
+    <div>
+        <label class="text-gray-600 font-semibold block">Erstellt von:</label>
+        <p class="text-gray-800">{{ task.created_by?.full_name || '-' }}</p>
+    </div>
+
+    <div>
+        <label class="text-gray-600 font-semibold block">Erstellt am:</label>
+        <p class="text-gray-800">{{ task.created_at | date: 'medium' }}</p>
+    </div>
+
+    <div>
+        <label class="text-gray-600 font-semibold block">Aktualisiert von:</label>
+        <p class="text-gray-800">{{ task.updated_by?.full_name || '-' }}</p>
+    </div>
+
+    <div>
+        <label class="text-gray-600 font-semibold block">Aktualisiert am:</label>
+        <p class="text-gray-800">{{ task.updated_at | date: 'medium' }}</p>
+    </div>    
+</div>
+
     <!-- 按钮 --> 
     <div class="my-8 flex gap-4">
       <button 
@@ -172,21 +225,50 @@
 
     <!-- comment部分 -->
     <div class="mb-8 border-t pt-6">
-      <h2 class="text-xl font-bold mb-4">Kommentare</h2>
-      <div class="bg-gray-50 p-4 rounded-lg border border-gray-400 mb-2"
-           *ngFor="let comment of task.comments">
+      <h2 class="text-2xl font-bold mb-4">Kommentare</h2>
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-2"
+           *ngFor="let comment of comments$ | async">
            <div class="flex justify-between">
                 <span class="font-semibold text-gray-700">{{ comment.author_name }}</span>
-                <span class="text-gray-500">{{ formatTimestamp(comment.updated_at) }}</span>
+                <span class="font-semibold text-gray-500">{{ formatTimestamp(comment.updated_at) }}</span>
            </div>
-           <div class="bg-gray-300 my-2 p-2"> {{comment.text}}</div>
+
+          <!--非编辑模式-->
+           <div *ngIf="editingCommentId !== comment.id" class="my-2"> {{comment.text}}
+
             <!-- 只有作者本人可以修改 -->
-            <button *ngIf="isCommentAuthor(comment)"
+           <div *ngIf="isCommentAuthor(comment)" class="mt-4 flex gap-4">
+             <button 
+              (click)="enterEditComment(comment)"
+              class="px-4 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg transition cursor-pointer">
+              Editieren
+            </button>
+            <button 
               (click)="deleteComment(comment.id)"
-              class="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition cursor-pointer">
+              class="px-4 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg transition cursor-pointer">
               Löschen
-            </button>            
-      </div>
+            </button> 
+           </div>
+          </div> 
+           
+        <!--非编辑模式-->
+        <div *ngIf="editingCommentId === comment.id" class="my-2">
+          <textarea [(ngModel)]="editingCommentText" rows="3"
+              class="w-full border-2 border-blue-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500 bg-white">
+          </textarea>
+          <div class="flex gap-4">
+            <button (click)="saveEditComment(comment.id)" 
+                class="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+                Speichern
+            </button>
+            <button (click)="cancelEditComment()"
+                class="px-4 py-1 bg-gray-400 hover:bg-gray-500 text-white rounded-lg transition">
+                Abbrechen
+          </button>
+        </div>
+        </div>
+    </div>
+
 
         <p *ngIf="!task.comments" 
            class="text-gray-700 text-sm mb-4">

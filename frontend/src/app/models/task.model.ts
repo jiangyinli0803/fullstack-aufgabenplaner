@@ -1,5 +1,5 @@
 import { Employee } from "./employee.model";
-import { Priority } from "./priority";
+import { Priority, PriorityKey } from "./priority";
 import { StatusKey } from "./status";
 import { Comment } from "./comment.model";
 
@@ -9,7 +9,7 @@ export interface Task {
   title: string;
   description: string;
   status: StatusKey;
-  priority: Priority;
+  priority: PriorityKey;
   start_date: string;
   end_date: string; 
   employee?: Employee|null; 
@@ -23,3 +23,19 @@ export interface Task {
   created_at?: string;
   updated_at?: string;
 }
+
+// ✅ POST/PATCH 请求体
+export interface TaskUpdateDTO {
+  title?: string;
+  description?: string;
+  status?: StatusKey;
+  priority?: PriorityKey;
+  start_date?: string;
+  end_date?: string;
+  employee_id?: number | null;  // ✅ 对应后端的 write_only 字段
+  tester_id?: number | null;    // ✅ 对应后端的 write_only 字段
+ // created_by?: number | null; 
+  //updated_by?: number | null; 
+  version?: string;
+}
+ 

@@ -12,19 +12,19 @@ export class EmployeeService {
 
   // 私有状态
   private employeeSubject$ = new BehaviorSubject<Employee[]>([]); //BehaviorSubject--RxJS Subject，能存储最新值
-  private loadingSubject$ = new BehaviorSubject<boolean>(false);
-  private errorSubject$ = new BehaviorSubject<string | null>(null);
+  //private loadingSubject$ = new BehaviorSubject<boolean>(false);
+ // private errorSubject$ = new BehaviorSubject<string | null>(null);
   // 公开的 Observable（只读）
   public employees$ = this.employeeSubject$.asObservable();
-  public loading$ = this.loadingSubject$.asObservable();
-  public error$ = this.errorSubject$.asObservable();
+  //public loading$ = this.loadingSubject$.asObservable();
+  //public error$ = this.errorSubject$.asObservable();
 
   constructor(private http: HttpClient) {}
 
-  // 加载所有任务到缓存
+  // 加载所有employees到缓存
   loadEmployees(filters?: any): void {
-      this.loadingSubject$.next(true); //设置初始状态：进入加载中，清空错误
-      this.errorSubject$.next(null);
+      //this.loadingSubject$.next(true); //设置初始状态：进入加载中，清空错误
+      //this.errorSubject$.next(null);
 
       let params = new HttpParams();
       if (filters) {
@@ -38,12 +38,12 @@ export class EmployeeService {
       this.http.get<Employee[]>(this.apiUrl + '/', { params }).subscribe({ 
         next: (employees) => {
           this.employeeSubject$.next(employees); //将获取到的任务数组保存到缓存（BehaviorSubject）
-          this.loadingSubject$.next(false);
+          //this.loadingSubject$.next(false);
         },
         error: (err) => {
           console.error('Error loading employees:', err);
-          this.errorSubject$.next('Failed to load employees');
-          this.loadingSubject$.next(false);
+          //this.errorSubject$.next('Failed to load employees');
+          //this.loadingSubject$.next(false);
         }
       });
   }
